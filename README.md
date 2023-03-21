@@ -2,7 +2,7 @@
 
 Ce repo contient les notes et le code produits dans le cadre du PX222
 enseigné à l'ESISAR pendant l'année 2022-2023, visant à la découverte
-et implémentation de [l'algorithme AES](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.197.pdf).
+et implémentation de [l'algorithme AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) défini dans le standard [FIPS 197](https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.197.pdf).
 
 L'objectif est de prototyper une implémentation "mathématique" d'AES
 en haskell, en faisant usage de la fléxibilité du système de type du
