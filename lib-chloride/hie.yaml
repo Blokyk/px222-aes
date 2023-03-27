@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: ./src
+      component: "lib-chloride:lib"
+    - path: ./app
+      component: "lib-chloride:exe:lib-chloride-exe"
+    - path: ./test
+      component: lib-chloride:test:lib-chloride-test
