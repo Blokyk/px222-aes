@@ -20,4 +20,5 @@ En plus du code, le projet de PX222 requiert la production d'un
 séances. Celui-ci peut être retrouvé dans [carnet-de-bord.md]
 
 Projet réalisé par [Zoë Courvoisier (blokyk)](github.com/blokyk) et
-[Léa Tavier](github.com/ghost), sous la license [GNU LGPL v3.0](LICENSE.md)
+[Léa Tavier (lelemeline)](github.com/lelemeline), sous la license
+[GNU LGPL v3.0](LICENSE.md)
