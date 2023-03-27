@@ -1,0 +1,56 @@
+name:                lib-chloride
+version:             0.1.0.0
+github:              "blokyk/px222-aes"
+license:             LGPL-3.0-or-later
+author:              "blokyk, lelemeline"
+maintainer:          "eliot.courvoisier@gmail.com"
+copyright:           "2023 Zoë Courvoisier, Léa Tavier"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+synopsis:            A Haskell library implementing AES solely from the mathematical definition of it in FIPS 197
+category:            Crypto
+
+description:
+    A Haskell library, written in the context of course PX222-IRC, implementing the AES algorithm
+    using only (group) theoretical definitions of it, as described in FIPS 197.
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  lib-chloride-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - lib-chloride
+
+tests:
+  lib-chloride-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - lib-chloride

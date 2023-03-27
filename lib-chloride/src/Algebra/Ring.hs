@@ -14,3 +14,10 @@ instance Ring Integer where
     add_inverse a = -a
     mult = (*)
     unit_mult = 1
+
+instance Ring Float where
+    add = (+)
+    unit_add = 0.0
+    add_inverse x = -x
+    mult = (*)
+    unit_mult = 1.0
