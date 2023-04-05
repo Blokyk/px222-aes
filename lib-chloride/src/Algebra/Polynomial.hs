@@ -8,11 +8,23 @@ import Algebra.Ring
 import Algebra.Field
 
 import Utils (zipWithDefault)
+import Data.List (intercalate)
 
 -- note: we don't want to export the ctor directly since consumers/users
 -- could create a non-trimmed polynomial, which would break quite a few
 -- assumptions in our code
-newtype Polynomial a = Polynomial [a] deriving (Eq,Show)
+newtype Polynomial a = Polynomial [a] deriving (Eq)
+
+instance (Show a, Field a) => Show (Polynomial a) where
+    show (Polynomial a)
+        = intercalate " + " -- put a '+' between each expression
+        $ filter ("" /= )   -- ignore empty strings
+        $ zipWith formatCoeff a ([0..] :: [Int])
+        where formatCoeff coeff deg
+                | coeff == zero = ""
+                | deg == 0      = show coeff
+                | coeff == one  = "X^" ++ show deg
+                | otherwise     = show coeff ++ "*X^" ++ show deg
 
 coeffs :: Polynomial a -> [a]
 coeffs (Polynomial a) = a
