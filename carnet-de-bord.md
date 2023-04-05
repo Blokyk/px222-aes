@@ -17,3 +17,21 @@ Zoë:
   - finir impl de GF(2) / Z/2Z
   - tenter d'implémenter modulo de polynôme
   - lire la spec + bien comprendre les polynomes dans GF(2)
+
+
+# Séance 3
+
+## Objectifs
+
+Commun: 
+  - implémentation de 4.3 (GF(256))
+  - écriture et planninification du pseudocode de la partie Chiffrement (5)
+  -
+Zoë:
+  - fixer l'implémentation de la division euclidienne
+  -
+  -
+Léa:
+  - implémentation de la fin du point 4 de la spec 
+  - écriture des tests
+  - commencer l'implémentation du point 5 de la spec
