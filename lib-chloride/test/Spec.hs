@@ -6,6 +6,7 @@ import Bit
 main :: IO ()
 main =
     do
+        putStrLn "BEGIN: Test polynome"
         test_polynome
 
 ok = putStrLn "OK"
