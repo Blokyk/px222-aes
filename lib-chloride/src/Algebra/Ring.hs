@@ -3,21 +3,21 @@ module Algebra.Ring where
 -- Ring (fr: Anneaux)
 class Ring a where
     add :: a -> a -> a
-    unit_add :: a
+    zero :: a
     add_inverse :: a -> a
     mult :: a -> a -> a
-    unit_mult :: a
+    one :: a
 
 instance Ring Integer where
     add = (+)
-    unit_add = 0
+    zero = 0
     add_inverse a = -a
     mult = (*)
-    unit_mult = 1
+    one = 1
 
 instance Ring Float where
     add = (+)
-    unit_add = 0.0
+    zero = 0.0
     add_inverse x = -x
     mult = (*)
-    unit_mult = 1.0
+    one = 1.0
