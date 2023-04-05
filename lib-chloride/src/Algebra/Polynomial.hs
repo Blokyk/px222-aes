@@ -9,7 +9,7 @@ import Algebra.Field
 
 import Utils (zipWithDefault)
 
-newtype Polynomial a = Polynomial [a]
+newtype Polynomial a = Polynomial [a] deriving (Eq,Show)
 
 degree :: Polynomial a -> Int
 degree (Polynomial []) = undefined
