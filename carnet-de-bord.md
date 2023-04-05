@@ -24,14 +24,15 @@ Zoë:
 ## Objectifs
 
 Commun:
-  - implémentation de 4.3 (GF(256))
-  - écriture et planification du pseudocode de la partie Chiffrement (5)
-  -
+  - [ ] implémentation de 4.3 (GF(256))
+  - [ ] écriture et planification du pseudocode de la partie Chiffrement (5)
+
 Zoë:
-  - fixer l'implémentation de la division euclidienne
-  -
-  -
+  - [x] fixer l'implémentation de la multiplication
+  - [ ] écrire des tests
+  - [ ] cleanup général
+
 Léa:
-  - implémentation de la fin du point 4 de la spec
-  - écriture des tests
-  - commencer l'implémentation du point 5 de la spec
+  - [ ] implémentation de la fin du point 4 de la spec
+  - [ ] écriture des tests
+  - [ ] commencer l'implémentation du point 5 de la spec
