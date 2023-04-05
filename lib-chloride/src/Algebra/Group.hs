@@ -1,7 +1,7 @@
 module Algebra.Group where
 
 -- Groups
-class Group a where
+class (Eq a) => Group a where
     unit :: a
     inverse :: a -> a
     operation :: a -> a -> a

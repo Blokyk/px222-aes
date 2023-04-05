@@ -1,7 +1,7 @@
 module Algebra.Ring where
 
 -- Ring (fr: Anneaux)
-class Ring a where
+class (Eq a) => Ring a where
     add :: a -> a -> a
     zero :: a
     add_inverse :: a -> a
