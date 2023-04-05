@@ -39,10 +39,13 @@ reduce = mod_polynomial irreducible_m
 irreducible_m :: Ring a => Polynomial a
 irreducible_m = Polynomial [one, one, zero, one, one, zero, zero, zero, one]
 
+add_polynomial :: Ring a => Polynomial a -> Polynomial a -> Polynomial a
+add_polynomial (Polynomial a) (Polynomial b) = Polynomial (zipWithDefault add zero zero a b)
+
 instance (Field a) => Ring (Polynomial a) where
     -- takes each coeff and adds them together; in case there's more coeffs on one side,
     -- it will just use `zero` to 'pad' the shorter one with zeroes
-    add (Polynomial a) (Polynomial b) = Polynomial (zipWithDefault add zero zero a b)
+    add = add_polynomial
     zero = Polynomial []
     add_inverse (Polynomial a) = Polynomial (map add_inverse a)
     mult (Polynomial a) (Polynomial b) = Polynomial (convolve a b) `mod_polynomial` irreducible_m
