@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use camelCase" #-}
 {-# HLINT ignore "Use <$>" #-}
@@ -10,26 +9,32 @@ import Algebra.Field
 
 import Utils (zipWithDefault)
 
+-- note: we don't want to export the ctor directly since consumers/users
+-- could create a non-trimmed polynomial, which would break quite a few
+-- assumptions in our code
 newtype Polynomial a = Polynomial [a] deriving (Eq,Show)
 
-degree :: Polynomial a -> Int
-degree (Polynomial []) = -1 -- should be undefined, but this makes it easier for us
-degree (Polynomial a)  = length a - 1
+coeffs :: Polynomial a -> [a]
+coeffs (Polynomial a) = a
 
-convolve :: Field a => [a] -> [a] -> [a]
-convolve xs ys
-    = do
-        x <- xs
-        y <- ys
-        return (mult x y)
+polynomial :: Field a => [a] -> Polynomial a
+polynomial = trim . Polynomial
+
+degree :: Polynomial a -> Int
+-- Ideally, `degree (Polynomial [])` should be undefined (technically Infinity, but it doesn't exist for ints),
+-- but defining it as -1 makes it easier for us in comparisons etc
+degree (Polynomial a)  = length a - 1
 
 nullPolynomial :: Polynomial a
 nullPolynomial = Polynomial []
 
+raiseDegree :: Field a => Polynomial a -> Polynomial a
+raiseDegree (Polynomial a) = Polynomial (zero : a)
+
 padUntilDegree :: Field a => Int -> Polynomial a -> Polynomial a
 padUntilDegree n p
     | degree p >= n = p
-    | otherwise = padUntilDegree n (mult p (Polynomial [zero, one]))
+    | otherwise     = padUntilDegree n (raiseDegree p)
 
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
@@ -38,29 +43,46 @@ divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
     | otherwise
         = (Polynomial (subFactors ++ [factor]), reste)
             where factor                         = diviser (last a) (last b)
-                  (Polynomial subFactors, reste) = divEuclide (sub dividend (mult_scalaire factor (padUntilDegree (degree dividend) divisor))) divisor
+                  (Polynomial subFactors, reste) = divEuclide (trim $ sub dividend (multScalaire factor (padUntilDegree (degree dividend) divisor))) divisor
 
-mod_polynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
-mod_polynomial a b = snd $ divEuclide a b
+polyMod :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+polyMod a b = snd $ divEuclide a b
 
-reduce :: Field a => Polynomial a -> Polynomial a
-reduce = mod_polynomial irreducible_m
+addPolynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+addPolynomial (Polynomial a) (Polynomial b) = polynomial (zipWithDefault add zero zero a b)
 
-irreducible_m :: Field a => Polynomial a
---                          x^0  x^1        x^3  x^4                    x^8
-irreducible_m = Polynomial [one, one, zero, one, one, zero, zero, zero, one]
+multScalaire :: Field a => a -> Polynomial a -> Polynomial a
+multScalaire lambda (Polynomial a)
+    | lambda == zero = nullPolynomial
+    | otherwise      = Polynomial (map (mult lambda) a)
 
-add_polynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
-add_polynomial (Polynomial a) (Polynomial b) = Polynomial (zipWithDefault add zero zero a b)
+-- This computes the result by multiplying the second polynomial (q) by each coefficient, increasing
+-- the degree each time, i.e.:
+--      p*q = a0*q + X*(a1*q) + X²*(a2*q) + ...
+-- It does this by recursion, first calculating `a0*q`, then 'making' a new polynomial with the other
+-- coefficients, and multiplying that by q, and finally raising the degree and adding
+-- it to `a0*q`:
+--          = a0*q + X*(a1*q + X*(a2*q + ...))
+--                      ~~~~~~~~~~~~~~~~~~~~~
+--                     = (a1 + a2*X + ...) * q
+multPolynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+multPolynomial (Polynomial []) _ = nullPolynomial
+multPolynomial (Polynomial (x:xs)) q
+    = add
+        (multScalaire x q) -- a0*q
+        (raiseDegree $ multPolynomial (polynomial xs) q) -- X*(a1*q + X*(a2*q + ...))
 
-mult_scalaire :: Field a => a -> Polynomial a -> Polynomial a
-mult_scalaire a = mult (Polynomial [a])
+trim :: Field a => Polynomial a -> Polynomial a
+trim p@(Polynomial []) = p
+trim p@(Polynomial a)
+    | last a /= zero = p
+    | otherwise      = trim (Polynomial $ init a)
 
 instance (Field a) => Ring (Polynomial a) where
     -- takes each coeff and adds them together; in case there's more coeffs on one side,
     -- it will just use `zero` to 'pad' the shorter one with zeroes
-    add = add_polynomial
     zero = Polynomial []
+    add = addPolynomial
     add_inverse (Polynomial a) = Polynomial (map add_inverse a)
-    mult (Polynomial a) (Polynomial b) = error "mult doesn't work!!!"
+    mult = multPolynomial
     one = Polynomial [one]
