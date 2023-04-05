@@ -4,11 +4,11 @@
 
 Commun:
   - commencer l'implémentation des polynomes en Haskell
- 
+
 Stretch:
   - réfléchir à l'impl de GF(2^8) en utilisant GF(2)
 
-Léa: 
+Léa:
   - finir la lecture de la spec AES
   - revoir les structures algébriques
   - écrire des tests pour l'impl des polynomes
