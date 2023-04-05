@@ -1,4 +1,4 @@
-add_polynomial [] []
+
 --[]
 
 add_polynomial [1,2,3] []
