@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,6 +32,7 @@ library
       Algebra.Polynomial
       Algebra.Ring
       Bit
+      Utils
   other-modules:
       Paths_lib_chloride
   autogen-modules:
