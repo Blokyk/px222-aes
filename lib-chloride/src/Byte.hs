@@ -1,7 +1,8 @@
 module Byte (
     byteFromPolynomial,
     byte,
-    asBits
+    asBits,
+    xtime,
 ) where
 
 import Bit
@@ -22,6 +23,12 @@ byte bits
 
 asBits :: Byte -> [Bit]
 asBits (Byte bits) = coeffs bits
+
+xbyte :: Byte
+xbyte = byte [zero, one]
+
+xtime :: Byte -> Byte
+xtime = mult xbyte
 
 irreducibleByte :: Field a => Polynomial a
 --                          x^0  x^1        x^3  x^4                    x^8
