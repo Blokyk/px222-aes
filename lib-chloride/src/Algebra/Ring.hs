@@ -8,6 +8,9 @@ class Ring a where
     mult :: a -> a -> a
     one :: a
 
+sub :: Ring a => a -> a -> a
+sub a b = add a $ add_inverse b
+
 instance Ring Integer where
     add = (+)
     zero = 0
