@@ -5,7 +5,7 @@ import GHC.Stack
 
 import Algebra
 import Byte
-import TestUtils (runTests, newTest)
+import TestUtils
 
 testByte :: HasCallStack => IO ()
 testByte =
