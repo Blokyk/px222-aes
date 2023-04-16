@@ -19,6 +19,6 @@ En plus du code, le projet de PX222 requiert la production d'un
 "carnet de bord," faisant état des objectifs et produits de chaque
 séances. Celui-ci peut être retrouvé dans [carnet-de-bord.md]
 
-Projet réalisé par [Zoë Courvoisier (blokyk)](github.com/blokyk) et
-[Léa Tavier (lelemeline)](github.com/lelemeline), sous la license
+Projet réalisé par [Zoë Courvoisier (blokyk)](https://github.com/blokyk) et
+[Léa Tavier (lelemeline)](https://github.com/lelemeline), sous la license
 [GNU LGPL v3.0](LICENSE.md)
