@@ -4,7 +4,9 @@ module Byte (
     , bcdByte
     , byte
     , asBits
+    , asPolynomial
     , xtime
+    , byteMod
 ) where
 
 import Bit
@@ -37,6 +39,9 @@ byte bits
 asBits :: Byte -> [Bit]
 asBits (Byte bits) = reverse $ coeffs bits
 
+asPolynomial :: Byte -> Polynomial Bit
+asPolynomial (Byte p) = p
+
 -- | The byte used in 'xtime'
 xbyte :: Byte
 xbyte = byte [one, zero]
@@ -48,16 +53,19 @@ xtime = mult xbyte
 
 -- | The byte used to "reduce" multiplication results that exceed 255, i.e
 -- that use more than 8 bits
-irreducibleByte :: Field a => Polynomial a
+irreducibleByte :: Byte
 --                            x^0  x^1        x^3  x^4                    x^8
-irreducibleByte = polynomial [one, one, zero, one, one, zero, zero, zero, one]
+irreducibleByte = Byte $ polynomial [one, one, zero, one, one, zero, zero, zero, one]
+
+byteMod :: Byte -> Byte -> Byte
+byteMod (Byte a) (Byte b) = Byte (a `polyMod` b)
 
 instance Ring Byte where
     zero = Byte zero
     one  = Byte one
     add (Byte p) (Byte q)  = Byte (add p q)
     add_inverse (Byte p)   = Byte (add_inverse p)
-    mult (Byte p) (Byte q) = Byte (mult p q `polyMod` irreducibleByte)
+    mult (Byte p) (Byte q) = Byte (mult p q) `byteMod` irreducibleByte
 
 instance Show Byte where
     show b
