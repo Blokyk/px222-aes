@@ -46,11 +46,12 @@ executables:
 
 tests:
   lib-chloride-test:
-    main:                Spec.hs
+    main:                Main.hs
     source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -fno-ignore-asserts
     dependencies:
     - lib-chloride
