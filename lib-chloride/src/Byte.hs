@@ -1,4 +1,5 @@
 module Byte (
+    Byte,
     byteFromPolynomial,
     bcdByte,
     byte,
@@ -16,9 +17,9 @@ newtype Byte = Byte (Polynomial Bit) deriving Eq
 
 instance Show Byte where
     show b
-        = map (\(Bit bit) -> if bit then '1' else '0') $ reverse paddedBits
+        = map (\(Bit bit) -> if bit then '1' else '0') paddedBits
         where bits = asBits b
-              paddedBits = bits ++ replicate (8 - length bits) (Bit False)
+              paddedBits = replicate (8 - length bits) (Bit False) ++ bits
 
 byteFromPolynomial :: Polynomial Bit -> Byte
 byteFromPolynomial = byte . coeffs
@@ -33,7 +34,7 @@ byte bits
     | otherwise       = Byte $ polynomial $ reverse bits
 
 asBits :: Byte -> [Bit]
-asBits (Byte bits) = coeffs bits
+asBits (Byte bits) = reverse $ coeffs bits
 
 xbyte :: Byte
 xbyte = byte [one, zero]
