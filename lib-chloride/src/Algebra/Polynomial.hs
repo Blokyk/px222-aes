@@ -2,7 +2,15 @@
 {-# HLINT ignore "Use camelCase" #-}
 {-# HLINT ignore "Use <$>" #-}
 
-module Algebra.Polynomial where
+module Algebra.Polynomial (
+      Polynomial()
+    , coeffs
+    , polynomial
+    , degree
+    , divEuclide
+    , polyMod
+    , multScalaire
+) where
 
 import Algebra.Ring
 import Algebra.Field
