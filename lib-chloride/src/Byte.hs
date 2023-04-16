@@ -19,7 +19,7 @@ byteFromPolynomial (Polynomial a) = byte a
 byte :: [Bit] -> Byte
 byte bits
     | length bits > 8 = error "Can't make a byte from more than 8 bits!"
-    | otherwise       = Byte $ polynomial bits
+    | otherwise       = Byte $ polynomial $ reverse bits
 
 asBits :: Byte -> [Bit]
 asBits (Byte bits) = coeffs bits
