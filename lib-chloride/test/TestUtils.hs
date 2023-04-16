@@ -20,11 +20,11 @@ unexpectedVal actual expected label =
         putStr "        but got:  "
         putStrLn $ bold (show actual)
 
-shouldBe :: (HasCallStack, Show a, Eq a) => a -> a -> IO ()
+shouldBe :: (HasCallStack, Show a, Eq a) => a -> a -> IO Bool
 shouldBe value expected
-    | value == expected = putStrLn $ green "OK"
+    | value == expected = do putStrLn $ green "OK"; return True
     | otherwise
-        = unexpectedVal value expected (topFuncName callStack ++ "(" ++ show line ++ "," ++ show col ++ ")")
+        = do unexpectedVal value expected (topFuncName callStack ++ "(" ++ show line ++ "," ++ show col ++ ")"); return True
     where line = srcLocStartLine $ topFuncLoc callStack
           col  = srcLocStartCol  $ topFuncLoc callStack
 
