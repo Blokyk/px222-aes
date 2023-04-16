@@ -1,10 +1,14 @@
-module Bit (one, zero, add, add_inverse, mult, Bit(Bit)) where
+module Bit (one, zero, add, add_inverse, mult, Bit(Bit), asBool) where
 
 import Algebra.Group
 import Algebra.Ring
 import Algebra.Field
 
 newtype Bit = Bit Bool deriving Eq
+
+asBool :: Bit -> Bool
+asBool (Bit True) = True
+asBool (Bit False) = False
 
 instance Show Bit where
     show (Bit False) = "0"
