@@ -1,5 +1,6 @@
 module Byte (
     byteFromPolynomial,
+    byteFromBCD,
     byte,
     asBits,
     xtime,
@@ -10,7 +11,7 @@ import Bit
 import Algebra
 
 -- we don't wanna export the constructor cause its kinda
--- unwieldy and means users could make "bytes" of any length
+-- unwieldy and it means users could make "bytes" of any length
 newtype Byte = Byte (Polynomial Bit) deriving Eq
 
 instance Show Byte where
@@ -22,6 +23,10 @@ instance Show Byte where
 byteFromPolynomial :: Polynomial Bit -> Byte
 byteFromPolynomial = byte . coeffs
 
+byteFromBCD :: Int -> Byte
+byteFromBCD 0 = zero
+byteFromBCD i = add (byte [if odd i then one else zero]) $ xtime (byteFromBCD (i `div` 10))
+
 byte :: [Bit] -> Byte
 byte bits
     | length bits > 8 = error "Can't make a byte from more than 8 bits!"
@@ -31,7 +36,7 @@ asBits :: Byte -> [Bit]
 asBits (Byte bits) = coeffs bits
 
 xbyte :: Byte
-xbyte = byte [zero, one]
+xbyte = byte [one, zero]
 
 xtime :: Byte -> Byte
 xtime = mult xbyte
