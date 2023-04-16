@@ -43,7 +43,7 @@ xtime :: Byte -> Byte
 xtime = mult xbyte
 
 irreducibleByte :: Field a => Polynomial a
---                          x^0  x^1        x^3  x^4                    x^8
+--                            x^0  x^1        x^3  x^4                    x^8
 irreducibleByte = polynomial [one, one, zero, one, one, zero, zero, zero, one]
 
 instance Ring Byte where
