@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-} -- required to make `show (zero :: a)` work fOR SoMe REaSon
 module Algebra.Polynomial (
       Polynomial()
     , coeffs
@@ -118,10 +119,13 @@ instance (Field a) => Ring (Polynomial a) where
     mult = multPolynomial
     one = Polynomial [one]
 
-instance (Show a, Field a) => Show (Polynomial a) where
+instance (Show a, Ring a) => Show (Polynomial a) where
+    show (Polynomial []) = show (zero :: a)
     show (Polynomial a)
+        | a == [zero] = show a
+        | otherwise
         = intercalate " + " -- put a '+' between each expression
-        $ filter ("" /= )   -- ignore empty strings
+        $ filter ("" /=)   -- ignore empty strings
         $ zipWith formatCoeff a ([0..] :: [Int])
         where formatCoeff coeff deg
                 | coeff == zero = ""
