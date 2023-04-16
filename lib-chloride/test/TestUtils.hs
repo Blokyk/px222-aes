@@ -11,10 +11,9 @@ import IOUtils
 topFuncName stack = fst $ head $ getCallStack $ popCallStack stack
 topFuncLoc  stack = snd $ head $ getCallStack stack
 
-unexpectedVal :: (Show a) => a -> a -> String -> IO ()
-unexpectedVal actual expected label =
+showValAndExpected :: (Show a) => a -> a -> IO ()
+showValAndExpected actual expected =
     do
-        putStrLn $ "    [" ++ bold (red "FAIL") ++ "] " ++ label
         putStr "        Expected: "
         putStrLn $ bold (show expected)
         putStr "        but got:  "
@@ -22,10 +21,14 @@ unexpectedVal actual expected label =
 
 shouldBe :: (HasCallStack, Show a, Eq a) => a -> a -> IO Bool
 shouldBe value expected
-    | value == expected = do putStrLn $ green "OK"; return True
+    | value == expected = do putStrLn $ "  " ++ label ++ ": " ++ green "OK"; return True
     | otherwise
-        = do unexpectedVal value expected (topFuncName callStack ++ "(" ++ show line ++ "," ++ show col ++ ")"); return True
-    where line = srcLocStartLine $ topFuncLoc callStack
+        = do
+            putStrLn $ "  " ++ label ++ ": " ++ bold (red "FAIL")
+            showValAndExpected value expected
+            return False
+    where label = topFuncName callStack ++ "(" ++ show line ++ ", " ++ show col ++ ")"
+          line = srcLocStartLine $ topFuncLoc callStack
           col  = srcLocStartCol  $ topFuncLoc callStack
 
 -- best thing here would just be to make some kind of "test harness" monad
@@ -47,7 +50,10 @@ newTest testName tests =
         return (null failures) -- if we have no failures, we're fine!
     where
         printFail (val, expected, i)
-            = unexpectedVal val expected (topFuncName callStack ++ " #" ++ show i) >> newline
+            = do
+                putStrLn $ "    [" ++ bold (red "FAIL") ++ "] " ++ (topFuncName callStack ++ " #" ++ show i)
+                showValAndExpected val expected
+                newline
 
 runTests :: String -> [IO Bool] -> IO ()
 runTests name tests =
