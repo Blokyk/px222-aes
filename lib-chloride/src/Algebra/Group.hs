@@ -1,4 +1,6 @@
-module Algebra.Group where
+module Algebra.Group (
+    Group(..)
+) where
 
 -- Groups
 class (Eq a) => Group a where

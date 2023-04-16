@@ -1,4 +1,7 @@
-module Algebra.Field where
+module Algebra.Field (
+      Field(..)
+    , diviser
+) where
 
 import Algebra.Ring
 
@@ -6,6 +9,8 @@ import Algebra.Ring
 class Ring a => Field a where
     mult_inverse :: a -> a
 
+-- | Divides two elements using the field's multiplicative
+-- inverse operation
 diviser :: Field a => a -> a -> a
 diviser a b = mult a $ mult_inverse b
 

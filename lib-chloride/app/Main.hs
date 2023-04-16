@@ -19,4 +19,4 @@ main :: IO ()
 main
     = do
         print (mult p q)
-        print (polyMod m p)
+        print (m `polyMod` p)

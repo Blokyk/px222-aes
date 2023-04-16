@@ -1,5 +1,5 @@
 module Utils (
-    zipWithDefault,
+    zipWithDefault
 ) where
 
 -- Same as zipWith, but instead of stopping when either of the

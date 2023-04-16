@@ -1,4 +1,7 @@
-module Bit (one, zero, add, add_inverse, mult, Bit(Bit), asBool) where
+module Bit (
+      Bit(..)
+    , asBool
+) where
 
 import Algebra.Group
 import Algebra.Ring
@@ -6,13 +9,10 @@ import Algebra.Field
 
 newtype Bit = Bit Bool deriving Eq
 
+-- | True if the bit is 1, False if it's 0
 asBool :: Bit -> Bool
 asBool (Bit True) = True
 asBool (Bit False) = False
-
-instance Show Bit where
-    show (Bit False) = "0"
-    show (Bit True)  = "1"
 
 instance Group Bit where
     unit = Bit False
@@ -29,3 +29,7 @@ instance Ring Bit where
 instance Field Bit where
     mult_inverse (Bit True) = Bit True
     mult_inverse _          = undefined
+
+instance Show Bit where
+    show (Bit False) = "0"
+    show (Bit True)  = "1"

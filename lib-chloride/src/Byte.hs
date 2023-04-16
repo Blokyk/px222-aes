@@ -1,10 +1,10 @@
 module Byte (
-    Byte,
-    byteFromPolynomial,
-    bcdByte,
-    byte,
-    asBits,
-    xtime,
+      Byte
+    , byteFromPolynomial
+    , bcdByte
+    , byte
+    , asBits
+    , xtime
 ) where
 
 import Bit
@@ -15,33 +15,39 @@ import Algebra
 -- unwieldy and it means users could make "bytes" of any length
 newtype Byte = Byte (Polynomial Bit) deriving Eq
 
-instance Show Byte where
-    show b
-        = map (\(Bit bit) -> if bit then '1' else '0') paddedBits
-        where bits = asBits b
-              paddedBits = replicate (8 - length bits) (Bit False) ++ bits
-
+-- | Creates a byte from a 'Polynomial Bit' value, assuming @degree(P) < 8@
 byteFromPolynomial :: Polynomial Bit -> Byte
 byteFromPolynomial = byte . coeffs
 
+-- | Creates a byte from an Integer describing it in BCD notation (Binary-Coded Decimal notation)
+--
+-- Example: @bcdByte 00011101 = 0x1C = byte [zero, zero, zero, one, one, one, zero, one]@
 bcdByte :: Int -> Byte
 bcdByte 0 = zero
 bcdByte i = add (byte [if odd i then one else zero]) $ xtime (bcdByte (i `div` 10))
 
+-- | Creates a byte from a list of bits in big-endian order (MSB first, LSB second)
+-- WARNING: This function is partial, as it will error-out when @length bits > 8@
 byte :: [Bit] -> Byte
 byte bits
     | length bits > 8 = error "Can't make a byte from more than 8 bits!"
     | otherwise       = Byte $ polynomial $ reverse bits
 
+-- | Decompose a byte into a list of bits, in big-endian order
 asBits :: Byte -> [Bit]
 asBits (Byte bits) = reverse $ coeffs bits
 
+-- | The byte used in 'xtime'
 xbyte :: Byte
 xbyte = byte [one, zero]
 
+-- | Multiplies a byte by @0x2@, effectively shifting it left (and reducing)
+-- it, if necessary, by XORing it with @0x1B@ (cf §4.2.1 of FIPS-197)
 xtime :: Byte -> Byte
 xtime = mult xbyte
 
+-- | The byte used to "reduce" multiplication results that exceed 255, i.e
+-- that use more than 8 bits
 irreducibleByte :: Field a => Polynomial a
 --                            x^0  x^1        x^3  x^4                    x^8
 irreducibleByte = polynomial [one, one, zero, one, one, zero, zero, zero, one]
@@ -52,3 +58,9 @@ instance Ring Byte where
     add (Byte p) (Byte q)  = Byte (add p q)
     add_inverse (Byte p)   = Byte (add_inverse p)
     mult (Byte p) (Byte q) = Byte (mult p q `polyMod` irreducibleByte)
+
+instance Show Byte where
+    show b
+        = map (\bit -> if asBool bit then '1' else '0') paddedBits
+        where bits = asBits b
+              paddedBits = replicate (8 - length bits) zero ++ bits

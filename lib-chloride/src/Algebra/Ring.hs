@@ -1,4 +1,7 @@
-module Algebra.Ring where
+module Algebra.Ring (
+      Ring(..)
+    , sub
+) where
 
 -- Ring (fr: Anneaux)
 class (Eq a) => Ring a where
@@ -8,6 +11,8 @@ class (Eq a) => Ring a where
     mult :: a -> a -> a
     one :: a
 
+-- | Subtracts two elements using the ring's additive
+-- inverse operation
 sub :: Ring a => a -> a -> a
 sub a b = add a $ add_inverse b
 

@@ -29,8 +29,9 @@ Commun:
 
 Zoë:
   - [x] fixer l'implémentation de la multiplication
-  - [ ] écrire des tests
-  - [ ] cleanup général
+  - [x] écrire des tests
+  - [x] cleanup général
+  - [ ] implémenter la division entre bytes
 
 Léa:
   - [ ] implémentation de la fin du point 4 de la spec
