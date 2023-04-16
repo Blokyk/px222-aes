@@ -67,7 +67,7 @@ padUntilDegree n p
 -- | Returns the quotient and remainder of the euclidean division of two polynomials
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
-    | degree divisor <= 0              = undefined
+    | degree divisor  < 0              = undefined
     | degree dividend < degree divisor = (nullPolynomial, dividend)
     | otherwise
         = (Polynomial (subFactors ++ [factor]), reste)
