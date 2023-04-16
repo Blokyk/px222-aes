@@ -1,6 +1,6 @@
 module Byte (
     byteFromPolynomial,
-    byteFromBCD,
+    bcdByte,
     byte,
     asBits,
     xtime,
@@ -23,9 +23,9 @@ instance Show Byte where
 byteFromPolynomial :: Polynomial Bit -> Byte
 byteFromPolynomial = byte . coeffs
 
-byteFromBCD :: Int -> Byte
-byteFromBCD 0 = zero
-byteFromBCD i = add (byte [if odd i then one else zero]) $ xtime (byteFromBCD (i `div` 10))
+bcdByte :: Int -> Byte
+bcdByte 0 = zero
+bcdByte i = add (byte [if odd i then one else zero]) $ xtime (bcdByte (i `div` 10))
 
 byte :: [Bit] -> Byte
 byte bits
