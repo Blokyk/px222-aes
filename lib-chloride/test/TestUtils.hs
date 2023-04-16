@@ -1,13 +1,12 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-module TestUtils (shouldBe, startTest) where
+module TestUtils (shouldBe, newTest, runTests) where
 
 import GHC.Stack
 import Data.List (partition)
+import Control.Monad (unless)
+import System.Exit (exitFailure)
 
-red str = "\x1b[31m" ++ str ++ "\x1b[0m"
-green str = "\x1b[32m" ++ str ++ "\x1b[0m"
-bold str = "\x1b[1m" ++ str ++ "\x1b[0m"
-italics str = "\x1b[3m" ++ str ++ "\x1b[0m"
+import IOUtils
 
 topFuncName stack = fst $ head $ getCallStack $ popCallStack stack
 topFuncLoc  stack = snd $ head $ getCallStack stack
@@ -29,9 +28,12 @@ shouldBe value expected
     where line = srcLocStartLine $ topFuncLoc callStack
           col  = srcLocStartCol  $ topFuncLoc callStack
 
-startTest :: (HasCallStack, Show a, Eq a) => String -> [(a ,a)] -> IO ()
-startTest testName [] = putStrLn $ bold $ "-- " ++ testName ++ ": "
-startTest testName tests =
+-- best thing here would just be to make some kind of "test harness" monad
+-- instead of piggy-backing of `IO Bool` and doing all this stuff, but...
+-- that'd be a bit overkill and i'm too lazy lol
+newTest :: (HasCallStack, Show a, Eq a) => String -> [(a ,a)] -> IO Bool
+newTest testName [] = do putStrLn $ bold $ " " ++ testName ++ ": "; return True
+newTest testName tests =
     do
         putStr $ "  " ++ bold testName ++ ": "
         -- assign an index to each test to perform
@@ -42,8 +44,18 @@ startTest testName tests =
         putStr $ show (length failures) ++ red " FAILs"
         newline
         mapM_ printFail failures
+        return (null failures) -- if we have no failures, we're fine!
     where
         printFail (val, expected, i)
             = unexpectedVal val expected (topFuncName callStack ++ " #" ++ show i) >> newline
-        newline = putStrLn ""
+
+runTests :: String -> [IO Bool] -> IO ()
+runTests name tests =
+    do
+        putStrLn $ "BEGIN: " ++ bold name
+        newline
+        results <- sequence tests
+        -- checks that every test was successful, otherwise crashes
+        unless (and results) exitFailure
+        newline
 

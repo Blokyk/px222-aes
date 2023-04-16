@@ -1,11 +1,11 @@
-module TestPolynomial where
+module TestPolynomial(testPolynomial) where
 
 import Prelude hiding (null)
 import GHC.Stack
 
 import Algebra hiding (polynomial)
 import qualified Algebra.Polynomial (polynomial)
-import TestUtils (startTest)
+import TestUtils (newTest, runTests)
 
 -- makes testing a bit more brief, cause we don't need to specify a type each test
 polynomial :: [Float] -> Polynomial Float
@@ -15,21 +15,11 @@ null :: Polynomial Float
 null = polynomial []
 
 testPolynomial :: IO ()
-testPolynomial =
-    do
-        putStrLn "BEGIN: Polynôme"
-        putStrLn ""
+testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod]
 
-        testCtor
-        testAdd
-        testMult
-        testDiv
-        testMod
-        putStrLn ""
-
-testCtor :: HasCallStack => IO ()
+testCtor :: HasCallStack => IO Bool
 testCtor =
-    startTest "Constructor & Utils" [
+    newTest "Constructor & Utils" [
            (
             coeffs (polynomial [1, 8, 3]),
             [1, 8, 3]
@@ -39,9 +29,9 @@ testCtor =
         )
     ]
 
-testAdd :: HasCallStack => IO ()
+testAdd :: HasCallStack => IO Bool
 testAdd =
-    startTest "Addition & Subtraction" [
+    newTest "Addition & Subtraction" [
            (
             add zero null,
             null
@@ -70,9 +60,9 @@ testAdd =
         )
     ]
 
-testMult :: HasCallStack => IO ()
+testMult :: HasCallStack => IO Bool
 testMult =
-    startTest "Multiplication" [
+    newTest "Multiplication" [
           (
             mult one null,
             null
@@ -102,9 +92,9 @@ testMult =
         )
     ]
 
-testDiv :: HasCallStack => IO ()
+testDiv :: HasCallStack => IO Bool
 testDiv =
-    startTest "Division" [
+    newTest "Division" [
            (
             divEuclide null (polynomial [2, 1]) ,
             (null, null)
@@ -114,9 +104,9 @@ testDiv =
         )
     ]
 
-testMod :: HasCallStack => IO ()
+testMod :: HasCallStack => IO Bool
 testMod =
-    startTest "Modulo" [
+    newTest "Modulo" [
            (
             polyMod null (polynomial [8, 2]),
             null
