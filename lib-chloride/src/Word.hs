@@ -28,6 +28,13 @@ wordFromList bytes
     | length bytes > 4 = error "Can't make a word from more than 4 bytes!"
     | otherwise        = Word $ polynomial $ reverse bytes
 
+wordFromInt :: Int -> Word
+wordFromInt i = word
+    (byteFromInt $ (i `div` 256 `div` 256 `div` 256) `mod` 256)
+    (byteFromInt $ (i `div` 256 `div` 256) `mod` 256)
+    (byteFromInt $ (i `div` 256) `mod` 256)
+    (byteFromInt $ i `mod` 256)
+
 -- | Extracts the bytes of a word into a list, in big-endian order
 asBytes :: Word -> [Byte]
 asBytes (Word p) = coeffs p
