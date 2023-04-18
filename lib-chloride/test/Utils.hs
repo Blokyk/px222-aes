@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-module TestUtils (shouldBe, newTest, runTests) where
+module Utils (shouldBe, newTest, runTests, GHC.Stack.HasCallStack) where
 
 import GHC.Stack
 import Data.List (partition)

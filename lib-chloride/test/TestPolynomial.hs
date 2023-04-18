@@ -1,11 +1,10 @@
 module TestPolynomial(testPolynomial) where
 
 import Prelude hiding (null)
-import GHC.Stack
 
 import Algebra hiding (polynomial)
 import qualified Algebra.Polynomial (polynomial)
-import TestUtils
+import Utils
 
 -- makes testing a bit more brief, cause we don't need to specify a type each test
 polynomial :: [Float] -> Polynomial Float

@@ -39,6 +39,8 @@ default-extensions:
 
 library:
   source-dirs: src
+  other-modules:
+  - Utils
 
 executables:
   lib-chloride-exe:

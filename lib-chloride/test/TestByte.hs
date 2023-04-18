@@ -1,10 +1,9 @@
 module TestByte where
 
-import GHC.Stack
+import Utils
 
 import Algebra
 import Byte
-import TestUtils
 
 testByte :: HasCallStack => IO ()
 testByte =
