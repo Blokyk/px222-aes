@@ -30,6 +30,12 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 
+default-extensions:
+- TupleSections
+- NumericUnderscores
+- InstanceSigs
+- ScopedTypeVariables # required to make e.g. `show (zero :: a)` work fOR SoMe REaSon
+
 library:
   source-dirs: src
 

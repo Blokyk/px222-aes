@@ -1,4 +1,3 @@
-{-# LANGUAGE NumericUnderscores #-}
 module TestByte where
 
 import GHC.Stack

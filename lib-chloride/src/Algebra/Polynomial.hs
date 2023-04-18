@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-} -- required to make `show (zero :: a)` work fOR SoMe REaSon
 module Algebra.Polynomial (
       Polynomial()
     , coeffs
