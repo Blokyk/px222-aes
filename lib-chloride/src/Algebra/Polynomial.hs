@@ -13,7 +13,7 @@ import Algebra.Field
 
 import Utils (zipWithDefault)
 import Data.List (intercalate)
-import Control.Exception (assert)
+import Control.Exception (assert, throw, ArithException(DivideByZero))
 
 -- note: we don't want to export the ctor directly since consumers/users
 -- could create a non-trimmed polynomial, which would break quite a few
@@ -66,7 +66,7 @@ padUntilDegree n p
 -- | Returns the quotient and remainder of the euclidean division of two polynomials
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
-    | degree divisor  < 0              = undefined
+    | degree divisor  < 0              = throw DivideByZero
     | degree dividend < degree divisor = (nullPolynomial, dividend)
     | otherwise
         = (Polynomial (subFactors ++ [factor]), reste)

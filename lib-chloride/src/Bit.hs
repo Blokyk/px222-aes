@@ -6,6 +6,7 @@ module Bit (
 import Algebra.Group
 import Algebra.Ring
 import Algebra.Field
+import Control.Exception (throw, ArithException (DivideByZero))
 
 newtype Bit = Bit Bool deriving Eq
 
@@ -28,7 +29,7 @@ instance Ring Bit where
 
 instance Field Bit where
     mult_inverse (Bit True) = Bit True
-    mult_inverse _          = undefined
+    mult_inverse _          = throw DivideByZero
 
 instance Show Bit where
     show (Bit False) = "0"
