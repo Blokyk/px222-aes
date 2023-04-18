@@ -78,6 +78,9 @@ instance Ring Byte where
     add_inverse (Byte p)   = Byte (add_inverse p)
     mult (Byte p) (Byte q) = Byte (mult p q) `byteMod` irreducibleByte
 
+instance Field Byte where
+    mult_inverse b = undefined
+
 instance Show Byte where
     show b
         = map (\bit -> if asBool bit then '1' else '0') paddedBits
