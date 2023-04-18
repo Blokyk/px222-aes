@@ -1,6 +1,7 @@
 module Byte (
       Byte
     , byteFromPolynomial
+    , byteFromInt
     , bcdByte
     , byte
     , asBits
@@ -10,7 +11,6 @@ module Byte (
 ) where
 
 import Bit
-
 import Algebra
 
 -- we don't wanna export the constructor cause its kinda
@@ -20,6 +20,17 @@ newtype Byte = Byte (Polynomial Bit) deriving Eq
 -- | Creates a byte from a 'Polynomial Bit' value, assuming @degree(P) < 8@
 byteFromPolynomial :: Polynomial Bit -> Byte
 byteFromPolynomial = byte . coeffs
+
+byteFromInt :: Int -> Byte
+byteFromInt i
+    | i > 255   = error $ "Integer " ++ show i ++ " is too big to be converted into a byte"
+    | otherwise = byte $ bits i
+        where
+            bits :: Int -> [Bit]
+            bits 0  = [zero]
+            bits 1  = [one]
+            bits n  = bits q ++ [if r == 0 then zero else one]
+                where (q, r) = quotRem n 2
 
 -- | Creates a byte from an Integer describing it in BCD notation (Binary-Coded Decimal notation)
 --

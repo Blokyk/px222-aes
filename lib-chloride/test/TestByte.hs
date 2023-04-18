@@ -25,6 +25,18 @@ testByte =
             ), (
                 bcdByte 0110_1001,
                 byte [zero, one, one, zero, one, zero, zero, one]
+            ), (
+                bcdByte 1111_1111,
+                byte [one, one, one, one, one, one, one, one]
+            ), (
+                byteFromInt 0,
+                byte []
+            ), (
+                byteFromInt 0x13,
+                byte [zero, zero, zero, one, zero, zero, one, one]
+            ), (
+                byteFromInt 0xff,
+                byte [one, one, one, one, one, one, one, one]
             )
         ],
         newTest "Addition" [
