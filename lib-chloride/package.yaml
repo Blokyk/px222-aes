@@ -62,5 +62,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     - -fno-ignore-asserts
+    - -Wno-missing-signatures
     dependencies:
     - lib-chloride

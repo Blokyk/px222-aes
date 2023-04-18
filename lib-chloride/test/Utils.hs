@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-missing-signatures #-}
 module Utils (shouldBe, newTest, runTests, GHC.Stack.HasCallStack) where
 
 import GHC.Stack
@@ -8,9 +7,7 @@ import System.Exit (exitFailure)
 
 import IOUtils
 
-topFuncName :: CallStack -> String
 topFuncName stack = fst $ head $ getCallStack $ popCallStack stack
-topFuncLoc :: CallStack -> SrcLoc
 topFuncLoc  stack = snd $ head $ getCallStack stack
 
 showValAndExpected :: (Show a) => a -> a -> IO ()
