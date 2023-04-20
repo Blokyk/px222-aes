@@ -13,10 +13,10 @@ testCtor =
     newTest "Constructors" [
             (
             asBits $ byte [],
-            []
+            [zero, zero, zero, zero, zero, zero, zero, zero]
         ), (
             asBits $ byte [one, zero, one, one, zero],
-            [one, zero, one, one, zero]
+            [zero, zero, zero, one, zero, one, one, zero]
         )
     ]
 

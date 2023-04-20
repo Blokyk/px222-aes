@@ -12,6 +12,7 @@ module Byte (
 
 import Bit
 import Algebra
+import Utils (padLeft)
 
 -- we don't wanna export the constructor cause its kinda
 -- unwieldy and it means users could make "bytes" of any length
@@ -48,7 +49,7 @@ byte bits
 
 -- | Decompose a byte into a list of bits, in big-endian order
 asBits :: Byte -> [Bit]
-asBits (Byte bits) = reverse $ coeffs bits
+asBits (Byte bits) = padLeft 8 zero (reverse $ coeffs bits)
 
 asPolynomial :: Byte -> Polynomial Bit
 asPolynomial (Byte p) = p
