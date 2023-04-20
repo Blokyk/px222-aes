@@ -7,12 +7,16 @@ module Byte (
     , asBits
     , asPolynomial
     , xtime
+    , rotLeft
     , byteMod
 ) where
 
 import Bit
 import Algebra
 import Utils (padLeft)
+
+import Data.Maybe (fromJust)
+import Data.List (uncons)
 
 -- we don't wanna export the constructor cause its kinda
 -- unwieldy and it means users could make "bytes" of any length
@@ -62,6 +66,14 @@ xbyte = byte [one, zero]
 -- it, if necessary, by XORing it with @0x1B@ (cf §4.2.1 of FIPS-197)
 xtime :: Byte -> Byte
 xtime = mult xbyte
+
+-- | Does a left shift that "wraps around," i.e. the
+-- MSB becomes the LSB instead of being discarded
+rotLeft :: Byte -> Byte
+rotLeft b = byte $ bits ++ [b7]
+    where
+        -- extracts the MSB then the rest of the byte
+        (b7, bits) = fromJust $ uncons $ asBits b
 
 -- | The byte used to "reduce" multiplication results that exceed 255, i.e
 -- that use more than 8 bits
