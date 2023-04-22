@@ -41,6 +41,7 @@ library:
   source-dirs: src
   other-modules:
   - Utils
+  - State
 
 executables:
   lib-chloride-exe:
