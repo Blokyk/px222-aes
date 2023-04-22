@@ -1,6 +1,6 @@
-module TestByte where
+module TestByte(testByte) where
 
-import Utils
+import Runner
 
 import Algebra
 import Byte

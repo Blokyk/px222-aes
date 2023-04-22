@@ -1,4 +1,4 @@
-module Utils (shouldBe, newTest, runTests, GHC.Stack.HasCallStack) where
+module Runner (shouldBe, newTest, runTests, GHC.Stack.HasCallStack) where
 
 import GHC.Stack
 import Data.List (partition)
