@@ -135,8 +135,8 @@ instance (Show a, Ring a) => Show (Polynomial a) where
         | otherwise
         = intercalate " + " -- put a '+' between each expression
         $ filter ("" /=)   -- ignore empty strings
-        $ zipWith formatCoeff a ([0..] :: [Int])
-        where formatCoeff coeff deg
+        $ map formatCoeff $ withIndex a
+        where formatCoeff (coeff, deg)
                 | coeff == zero = ""
                 | deg == 0      = show coeff
                 | coeff == one  = "X^" ++ show deg
