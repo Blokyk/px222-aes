@@ -1,6 +1,6 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 {-# HLINT ignore "Redundant bracket" #-}
-module State (State, getState, stateFrom, runState) where
+module State (State, getState, stateFrom, runState, thenState) where
 
 data State s a = State (s -> (s, a))
 
@@ -59,3 +59,6 @@ stateFrom = State . const (,()) -- \s -> \_ -> (s, ())
 
 runState :: State s a -> s -> (s, a)
 runState (State stateFunc) = stateFunc
+
+thenState :: a -> State s a
+thenState = return
