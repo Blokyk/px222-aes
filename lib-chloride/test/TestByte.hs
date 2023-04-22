@@ -6,7 +6,7 @@ import Algebra
 import Byte
 
 testByte :: HasCallStack => IO ()
-testByte = runTests "Byte" [testCtor, testUtils, testRotLeft, testAdd, testMult]
+testByte = runTests "Byte" [testCtor, testUtils, testAsInt, testRotLeft, testAdd, testMult]
 
 testCtor :: HasCallStack => IO Bool
 testCtor =
@@ -41,6 +41,27 @@ testUtils =
         ), (
             byteFromInt 0xff,
             byte [one, one, one, one, one, one, one, one]
+        )
+    ]
+
+testAsInt :: HasCallStack => IO Bool
+testAsInt =
+    newTest "asInt" [
+           (
+            asInt $ byteFromInt 0x0,
+            0x0
+        ), (
+            asInt $ byteFromInt 0x1,
+            0x1
+        ), (
+            asInt $ byteFromInt 0x13,
+            0x13
+        ), (
+            asInt $ byteFromInt 0x44,
+            0x44
+        ), (
+            asInt $ byteFromInt 0xff,
+            0xff
         )
     ]
 

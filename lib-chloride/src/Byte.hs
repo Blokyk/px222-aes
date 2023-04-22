@@ -6,6 +6,7 @@ module Byte (
     , byte
     , asBits
     , asPolynomial
+    , asInt
     , xtime
     , rotLeft
     , byteMod
@@ -57,6 +58,9 @@ asBits (Byte bits) = padLeft 8 zero (reverse $ coeffs bits)
 
 asPolynomial :: Byte -> Polynomial Bit
 asPolynomial (Byte p) = p
+
+asInt :: Byte -> Integer
+asInt (Byte p) = applyPolynomial (\b i -> if asBool b then i else 0) p 2
 
 -- | The byte used in 'xtime'
 xbyte :: Byte
