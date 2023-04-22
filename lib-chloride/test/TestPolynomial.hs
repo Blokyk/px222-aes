@@ -15,7 +15,7 @@ null :: Polynomial Float
 null = polynomial []
 
 testPolynomial :: IO ()
-testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod]
+testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod, testApplyPolynomial]
 
 testCtor :: HasCallStack => IO Bool
 testCtor =
@@ -119,5 +119,20 @@ testMod =
         ), (
             polyMod (polynomial [-12, -5, -10, 3]) (polynomial [4, -1]),
             null
+        )
+    ]
+
+testApplyPolynomial :: HasCallStack => IO Bool
+testApplyPolynomial =
+    newTest "applyPolynomial" [
+           (
+            applyPolynomial (*) (polynomial [1, 1, 5]) 2, -- 5*X^2 + X + 1 where X = 2
+            23
+        ), (
+            applyPolynomial (*) (polynomial [1]) 10,
+            1
+        ), (
+            applyPolynomial (*) (polynomial []) 3,
+            0
         )
     ]

@@ -2,16 +2,18 @@ module Algebra.Polynomial (
       Polynomial()
     , coeffs
     , polynomial
+    , mapPolynomial
     , degree
     , divEuclide
     , polyMod
     , multScalaire
+    , applyPolynomial
 ) where
 
 import Algebra.Ring
 import Algebra.Field
 
-import Utils (zipWithDefault)
+import Utils (zipWithDefault, withIndex)
 import Data.List (intercalate)
 import Control.Exception (assert, throw, ArithException(DivideByZero))
 
@@ -108,6 +110,14 @@ trim p@(Polynomial []) = p
 trim p@(Polynomial a)
     | last a /= zero = p
     | otherwise      = trim (Polynomial $ init a)
+
+mapPolynomial :: (Field b) => (a -> b) -> Polynomial a -> Polynomial b
+mapPolynomial f = polynomial . map f . coeffs
+
+applyPolynomial :: Ring b => (a -> b -> b) -> Polynomial a -> b -> b
+applyPolynomial f (Polynomial as) x
+    = foldr add zero valueByDegrees
+    where valueByDegrees = map (\(a, pow) -> a `f` (iterate (mult x) one !! pow)) $ withIndex as
 
 instance (Field a) => Ring (Polynomial a) where
     -- takes each coeff and adds them together; in case there's more coeffs on one side,
