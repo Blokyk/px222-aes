@@ -6,7 +6,16 @@ import Algebra
 import Byte
 
 testByte :: HasCallStack => IO ()
-testByte = runTests "Byte" [testCtor, testUtils, testAsInt, testRotLeft, testAdd, testMult]
+testByte =
+    runTests "Byte" [
+        testCtor,
+        testBcdByte,
+        testByteFromInt,
+        testAsInt,
+        testRotLeft,
+        testAdd,
+        testMult
+    ]
 
 testCtor :: HasCallStack => IO Bool
 testCtor =
@@ -20,10 +29,10 @@ testCtor =
         )
     ]
 
-testUtils :: HasCallStack => IO Bool
-testUtils =
-    newTest "Utils" [
-            (
+testBcdByte :: HasCallStack => IO Bool
+testBcdByte =
+    newTest "bcdByte" [
+           (
             bcdByte 0,
             byte []
         ), (
@@ -32,7 +41,13 @@ testUtils =
         ), (
             bcdByte 1111_1111,
             byte [one, one, one, one, one, one, one, one]
-        ), (
+        )
+    ]
+
+testByteFromInt :: HasCallStack => IO Bool
+testByteFromInt =
+    newTest "byteFromInt" [
+           (
             byteFromInt 0,
             byte []
         ), (
@@ -68,7 +83,7 @@ testAsInt =
 testRotLeft :: HasCallStack => IO Bool
 testRotLeft =
     do
-        t1 <- newTest "RotLeft" [
+        t1 <- newTest "rotLeft" [
             (
                 rotLeft $ bcdByte 1,
                 bcdByte 10
@@ -85,7 +100,7 @@ testRotLeft =
                 rotLeft $ bcdByte 01111111,
                 bcdByte 11111110
             )]
-        t2 <- newTest "RotLeft*8 = id" $ map (\i -> (iterate rotLeft (byteFromInt i) !! 8, byteFromInt i)) [0..0xff]
+        t2 <- newTest "rotLeft*8 = id" $ map (\i -> (iterate rotLeft (byteFromInt i) !! 8, byteFromInt i)) [0..0xff]
         return (t1 && t2)
 
 testAdd :: HasCallStack => IO Bool
