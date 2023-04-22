@@ -46,7 +46,7 @@ bcdByte 0 = zero
 bcdByte i = add (byte [if odd i then one else zero]) $ xtime (bcdByte (i `div` 10))
 
 -- | Creates a byte from a list of bits in big-endian order (MSB first, LSB second)
--- WARNING: This function is partial, as it will error-out when @length bits > 8@
+-- WARNING: This function will error-out when @length bits > 8@
 byte :: [Bit] -> Byte
 byte bits
     | length bits > 8 = error "Can't make a byte from more than 8 bits!"
@@ -82,7 +82,7 @@ rotLeft b = byte $ bits ++ [b7]
 -- | The byte used to "reduce" multiplication results that exceed 255, i.e
 -- that use more than 8 bits
 irreducibleByte :: Byte
---                            x^0  x^1        x^3  x^4                    x^8
+--                                   x^0  x^1        x^3  x^4                    x^8
 irreducibleByte = Byte $ polynomial [one, one, zero, one, one, zero, zero, zero, one]
 
 byteMod :: Byte -> Byte -> Byte
