@@ -20,7 +20,7 @@ instance Show Word where
     show b
         = unwords $ map show paddedBits
         where bytes = asBytes b
-              paddedBits = replicate (8 - length bytes) zero ++ bytes
+              paddedBits = replicate (4 - length bytes) zero ++ bytes
 
 word :: Byte -> Byte -> Byte -> Byte -> Word
 word hh hl lh ll = wordFromList [hh, hl, lh, ll]
