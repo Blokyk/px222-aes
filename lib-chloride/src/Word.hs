@@ -2,6 +2,7 @@ module Word (
       Word()
     , word
     , wordFromList
+    , wordFromInt
     , asBytes
     , asByteTuple
 ) where
