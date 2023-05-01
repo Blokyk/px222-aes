@@ -3,7 +3,7 @@ import Algebra
 
 input = [[Polynomial a]]
 
-state_array = 
+state_array = [Word a]
 
 
 subBytes 
