@@ -34,6 +34,22 @@ Zoë:
   - [ ] implémenter la division entre bytes
 
 Léa:
-  - [ ] implémentation de la fin du point 4 de la spec
+  - [x] implémentation de la fin du point 4 de la spec
   - [ ] écriture des tests
   - [ ] commencer l'implémentation du point 5 de la spec
+
+
+# Séance 4
+
+## Objectifs
+
+Commun:
+  - [x] écriture du pseudo-code pour l'inversion de polynome/euclide étentdu
+
+Zoë:
+  - [x] réflechir à la structure du cipher + début d'impl
+  - [x] implémenter l'expansion de clé
+
+Léa:
+  - [x] écrire des tests pour Word
+  - [x] étendre l'implémentation de Word (par ex. utilitaires)
