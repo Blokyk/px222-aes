@@ -104,12 +104,15 @@ multPolynomial (Polynomial (x:xs)) q
         (multScalaire x q) -- a0*q
         (raiseDegree $ multPolynomial (polynomial xs) q) -- X*(a1*q + X*(a2*q + ...))
 
--- | Removes any leading (highest degree) coefficient that are zero
-trim :: Field a => Polynomial a -> Polynomial a
-trim p@(Polynomial []) = p
-trim p@(Polynomial a)
-    | last a /= zero = p
-    | otherwise      = trim (Polynomial $ init a)
+-- | Removes all highest-degree coefficients that are zero
+trim :: Ring a => Polynomial a -> Polynomial a
+trim p = Polynomial $ trim' $ coeffs p
+    where
+        trim' [] = []
+        trim' (x:xs)
+            | x == zero && null trimmedXS = []
+            | otherwise = x:trimmedXS
+            where trimmedXS = trim' xs
 
 mapPolynomial :: (Field b) => (a -> b) -> Polynomial a -> Polynomial b
 mapPolynomial f = polynomial . map f . coeffs
