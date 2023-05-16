@@ -29,7 +29,7 @@ padLeft n x xs = replicate (n - length xs) x ++ xs
 --
 -- sequenceF [f, g, h] 0 = h(g(f(0)))
 sequenceF :: [a -> a] -> a -> a
-sequenceF = foldr (.) id
+sequenceF = foldl (flip (.)) id
 -- sequenceF fs x = foldl' (\x' f -> f x') x fs
 
 showHex :: Integral a => a -> [Char]
