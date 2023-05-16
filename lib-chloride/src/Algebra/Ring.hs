@@ -16,7 +16,7 @@ class (Eq a) => Ring a where
 sub :: Ring a => a -> a -> a
 sub a b = add a $ add_inverse b
 
-instance Ring Integer where
+instance Ring Int where
     add = (+)
     zero = 0
     add_inverse a = -a

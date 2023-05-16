@@ -5,6 +5,7 @@ import Prelude hiding (null)
 import Runner
 
 import Algebra hiding (polynomial)
+import Bit
 import qualified Algebra.Polynomial (polynomial)
 
 -- makes testing a bit more brief, cause we don't need to specify a type each test
@@ -15,7 +16,7 @@ null :: Polynomial Float
 null = polynomial []
 
 testPolynomial :: IO ()
-testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod, testApplyPolynomial]
+testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod, testApplyPolynomial, testDivProp]
 
 testCtor :: HasCallStack => IO Bool
 testCtor =
@@ -104,6 +105,19 @@ testDiv =
         )
     ]
 
+testDivProp :: HasCallStack => IO Bool
+testDivProp =
+    newTest "DivisionProp" $ map (uncurry testPolyDiv) polyPairs
+    where
+        polys = [Algebra.Polynomial.polynomial (rotate n l) | n <- [0..3], l <- [[one, one, zero], [one, one, zero, zero, one], [zero, one, one :: Bit]]]
+        polyPairs = [(p, q) | p <- polys, q <- polys]
+        testPolyDiv p q = ((rem `add` (quot `mult` q), q), (p, q))
+            where (quot, rem) = p `divEuclide` q
+
+rotate :: Int -> [a] -> [a]
+rotate _ [] = []
+rotate n xs = zipWith const (drop n (cycle xs)) xs
+
 testMod :: HasCallStack => IO Bool
 testMod =
     newTest "Modulo" [
@@ -111,14 +125,17 @@ testMod =
             polyMod null (polynomial [8, 2]),
             null
         ), (
-            polyMod (polynomial [1, 8, 9, 3, 7]) (polynomial [-1, 0, 0, 1]),
-            polynomial [4, 15, 9]
+            polyMod (polynomial [0, 1, 5]) (polynomial [1, 5]),
+            null
+        ), (
+            polyMod (polynomial [-12, -5, -10, 3]) (polynomial [4, -1]),
+            null
         ), (
             polyMod (polynomial [3, 8, 0, 5]) (polynomial [1, 2]),
             polynomial [-1.625]
         ), (
-            polyMod (polynomial [-12, -5, -10, 3]) (polynomial [4, -1]),
-            null
+            polyMod (polynomial [1, 8, 9, 3, 7]) (polynomial [-1, 0, 0, 1]),
+            polynomial [4, 15, 9]
         )
     ]
 

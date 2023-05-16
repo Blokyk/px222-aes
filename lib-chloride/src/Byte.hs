@@ -1,5 +1,5 @@
 module Byte (
-      Byte
+      Byte(Byte)
     , byteFromPolynomial
     , byteFromInt
     , bcdByte
@@ -10,6 +10,7 @@ module Byte (
     , xtime
     , rotLeft
     , byteMod
+    , irreducibleByte
 ) where
 
 import Bit
@@ -54,12 +55,12 @@ byte bits
 
 -- | Decompose a byte into a list of bits, in big-endian order
 asBits :: Byte -> [Bit]
-asBits (Byte bits) = padLeft 8 zero (reverse $ coeffs bits)
+asBits (Byte bits) = padLeft 8 zero $ reverse $ coeffs bits
 
 asPolynomial :: Byte -> Polynomial Bit
 asPolynomial (Byte p) = p
 
-asInt :: Byte -> Integer
+asInt :: Byte -> Int
 asInt (Byte p) = applyPolynomial (\b i -> if asBool b then i else 0) p 2
 
 -- | The byte used in 'xtime'
@@ -96,7 +97,9 @@ instance Ring Byte where
     mult (Byte p) (Byte q) = Byte (mult p q) `byteMod` irreducibleByte
 
 instance Field Byte where
-    mult_inverse b = undefined
+    mult_inverse (Byte b)
+        | b == zero = zero
+        | otherwise = Byte (modInv b $ asPolynomial irreducibleByte) `byteMod` irreducibleByte
 
 instance Show Byte where
     show b

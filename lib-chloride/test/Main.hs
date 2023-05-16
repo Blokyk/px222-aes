@@ -1,6 +1,7 @@
 import TestByte
 import TestCipher
 import TestPolynomial
+import TestWord
 
 main :: IO ()
 main =
@@ -8,5 +9,6 @@ main =
         putStrLn ""
         testPolynomial
         testByte
+        testWord
         testCipher
         putStrLn ""

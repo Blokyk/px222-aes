@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unused-local-binds #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Algebra.Polynomial (
       Polynomial()
     , coeffs
@@ -6,8 +8,11 @@ module Algebra.Polynomial (
     , degree
     , divEuclide
     , polyMod
+    , polyDiv
     , multScalaire
     , applyPolynomial
+    , modInv
+    , polyGCDExt
 ) where
 
 import Algebra.Ring
@@ -65,19 +70,37 @@ padUntilDegree n p
     -- in case this is actually the null/zero-polynomial
     | otherwise     = assert (p /= zero) $ padUntilDegree n (raiseDegree p)
 
--- | Returns the quotient and remainder of the euclidean division of two polynomials
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
-    | degree divisor  < 0              = throw DivideByZero
-    | degree dividend < degree divisor = (nullPolynomial, dividend)
+    | divisor == zero                  = throw DivideByZero
+    | degree dividend < degree divisor = (nullPolynomial, trim dividend)
+    -- this branch is special: if we end up here, we're already inside another divEuclide call;
+    -- this means that it's okay to have leading zeroes, actually
+    | last a == zero
+        = if degree dividend == degree divisor
+            then (Polynomial [zero], trim dividend)
+            else
+                let
+                    (Polynomial q, r) = divEuclide (Polynomial $ init a) divisor
+                in (Polynomial (q ++ [zero]), r)
     | otherwise
         = (Polynomial (subFactors ++ [factor]), reste)
-            where factor                         = diviser (last a) (last b)
-                  (Polynomial subFactors, reste) = divEuclide (trim $ sub dividend (multScalaire factor (padUntilDegree (degree dividend) divisor))) divisor
+            where
+                factor                         = diviser (last a) (last b)
+                (Polynomial subFactors, reste) = divEuclide subRes divisor
+                trimmedRes = trim subRes
+                subRes = Polynomial (init subResCoeffs)
+                (Polynomial subResCoeffs) = dividend `sub'` multScalaire factor (padUntilDegree (degree dividend) divisor)
+                -- needed to avoid trimming zeroes
+                sub' :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+                sub' p q = Polynomial (zipWithDefault add zero zero (coeffs p) (coeffs $ add_inverse q))
 
--- | Returns the the first polynomial modulo the second
+-- | Returns the first polynomial modulo the second
 polyMod :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 polyMod a b = snd $ divEuclide a b
+
+polyDiv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+polyDiv a b = fst $ divEuclide a b
 
 addPolynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 addPolynomial (Polynomial a) (Polynomial b) = polynomial (zipWithDefault add zero zero a b)
@@ -103,6 +126,20 @@ multPolynomial (Polynomial (x:xs)) q
     = add
         (multScalaire x q) -- a0*q
         (raiseDegree $ multPolynomial (polynomial xs) q) -- X*(a1*q + X*(a2*q + ...))
+
+modInv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+modInv b m = a
+  where
+    (_, (a, _)) = polyGCDExt b m
+
+polyGCDExt :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, (Polynomial a, Polynomial a))
+polyGCDExt p q
+    | q == zero = (p, (one, zero))
+    | otherwise = (g, (a, c))
+    where
+        (g, (prev_a, prev_c)) = polyGCDExt q (p `polyMod` q)
+        a  = prev_c
+        c  = prev_a `sub` (prev_c `mult` (p `polyDiv` q))
 
 -- | Removes all highest-degree coefficients that are zero
 trim :: Ring a => Polynomial a -> Polynomial a

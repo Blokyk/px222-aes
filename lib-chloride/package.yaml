@@ -41,7 +41,6 @@ library:
   source-dirs: src
   other-modules:
   - Utils
-  - State
 
 executables:
   lib-chloride-exe:
@@ -63,6 +62,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     - -fno-ignore-asserts
-    - -Wno-missing-signatures
+    - -Wno-all
     dependencies:
     - lib-chloride

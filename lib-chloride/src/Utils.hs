@@ -2,7 +2,15 @@ module Utils (
       zipWithDefault
     , withIndex
     , padLeft
+    , sequenceF
+    , Utils.showHex
+    , rowMajorMatrix
+    , columnMajorMatrix
 ) where
+
+import Numeric (showHex)
+import Data.List (mapAccumL, partition, foldl')
+import Data.Tuple (swap)
 
 -- Same as zipWith, but instead of stopping when either of the
 -- lists are empty, it will use the corresponding default value
@@ -16,3 +24,28 @@ withIndex l = zip l [0..]
 
 padLeft :: Int -> a -> [a] -> [a]
 padLeft n x xs = replicate (n - length xs) x ++ xs
+
+-- | Applies a sequence of operations from an initial value
+--
+-- sequenceF [f, g, h] 0 = h(g(f(0)))
+sequenceF :: [a -> a] -> a -> a
+sequenceF = foldr (.) id
+-- sequenceF fs x = foldl' (\x' f -> f x') x fs
+
+showHex :: Integral a => a -> [Char]
+showHex i = padLeft 2 '0' $ Numeric.showHex i ""
+
+rowMajorMatrix :: Int -> [a] -> [[a]]
+rowMajorMatrix n l = map (map fst) bla
+    where
+        indexed = withIndex l
+        modIndexed = map (\(a, i) -> (a, i `mod` n)) indexed
+        possibleIndices = [0..(n-1)]
+        (_, bla) = mapAccumL filterRemaining modIndexed possibleIndices
+        filterRemaining remaining idx =
+            swap $ partition (\(_, i) -> i == idx) remaining
+
+columnMajorMatrix :: Int -> [a] -> [[a]]
+columnMajorMatrix _ [] = []
+columnMajorMatrix n l  = row : columnMajorMatrix n rest
+    where (row, rest) = splitAt n l

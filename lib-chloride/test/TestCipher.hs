@@ -2,20 +2,56 @@ module TestCipher(testCipher) where
 
 import Runner
 
+import Byte
 import Cipher
 import Word
-import Byte
 
 testCipher :: HasCallStack => IO ()
 testCipher =
-    runTests "Cipher" [testSubBytes]
+    runTests "Cipher" [testSubBytes, testShiftRows, testMixColumns, testAddRoundKey]
 
 testSubBytes :: HasCallStack => IO Bool
-testSubBytes = newTest "SubBytes" $
-    zip (map (subByte . byteFromInt) [0x0..0xff]) sbox
+testSubBytes = newTest "SubByte" $
+    zip (map (subByte . byteFromInt) [0x0..0xff]) sbox'
 
-sbox :: [Byte]
-sbox = map byteFromInt
+testShiftRows :: HasCallStack => IO Bool
+testShiftRows
+    = newTest "ShiftRows" [
+           (
+            shiftRows $ map wordFromInt [0xd42711ae, 0xe0bf98f1, 0xb8b45de5, 0x1e415230],
+            map wordFromInt [0xd4bf5d30, 0xe0b452ae, 0xb84111f1, 0x1e2798e5]
+        ), (
+            shiftRows $ map wordFromInt [0x49ded289, 0x45db96f1, 0x7f39871a, 0x7702533b],
+            map wordFromInt [0x49db873b, 0x45395389, 0x7f02d2f1, 0x77de961a]
+        )
+    ]
+
+testMixColumns :: HasCallStack => IO Bool
+testMixColumns
+    = newTest "MixColumns" [
+           (
+            mixColumns $ map wordFromInt [0xd4bf5d30, 0xe0b452ae, 0xb84111f1, 0x1e2798e5],
+            map wordFromInt [0x046681e5, 0xe0cb199a, 0x48f8d37a, 0x2806264c]
+        ), (
+            mixColumns $ map wordFromInt [0x49db873b, 0x45395389, 0x7f02d2f1, 0x77de961a],
+            map wordFromInt [0x584dcaf1, 0x1b4b5aac, 0xdbe7caa8, 0x1b6bb0e5]
+        )
+    ]
+
+testAddRoundKey :: HasCallStack => IO Bool
+testAddRoundKey
+    = newTest "AddRoundKey" [
+           (
+            addRoundKey (KeyData (map wordFromInt [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]) 0) (map wordFromInt [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734]),
+            map wordFromInt [0x193de3be, 0xa0f4e22b, 0x9ac68d2a, 0xe9f84808]
+        ), (
+            addRoundKey (KeyData (map wordFromInt [0xef44a541, 0xa8525b7f, 0xb671253b, 0xdb0bad00]) 0) (map wordFromInt [0x0fd6daa9, 0x603138bf, 0x6fc0106b, 0x5eb31301]),
+            map wordFromInt [0xe0927fe8, 0xc86363c0, 0xd9b13550, 0x85b8be01]
+        )
+    ]
+
+sbox' :: [Byte]
+sbox' = map byteFromInt
       [ 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67,
         0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59,
         0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7,
