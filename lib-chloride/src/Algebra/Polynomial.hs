@@ -11,6 +11,7 @@ module Algebra.Polynomial (
     , polyDiv
     , multScalaire
     , applyPolynomial
+    , computePolynomialAt
     , modInv
     , polyGCDExt
 ) where
@@ -21,6 +22,7 @@ import Algebra.Field
 import Utils (zipWithDefault, withIndex)
 import Data.List (intercalate)
 import Control.Exception (assert, throw, ArithException(DivideByZero))
+import Data.Foldable (Foldable(foldl'))
 
 -- note: we don't want to export the ctor directly since consumers/users
 -- could create a non-trimmed polynomial, which would break quite a few
@@ -60,7 +62,8 @@ nullPolynomial = Polynomial []
 
 -- | Raises the degree of a polynomial by 1
 raiseDegree :: Field a => Polynomial a -> Polynomial a
-raiseDegree (Polynomial a) = Polynomial (zero : a)
+raiseDegree (Polynomial []) = Polynomial []
+raiseDegree (Polynomial a)  = Polynomial (zero : a)
 
 -- | Increases the degree of the polynomial to the given value
 padUntilDegree :: Field a => Int -> Polynomial a -> Polynomial a
@@ -103,6 +106,8 @@ polyDiv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 polyDiv a b = fst $ divEuclide a b
 
 addPolynomial :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+addPolynomial (Polynomial []) q = q
+addPolynomial p (Polynomial []) = p
 addPolynomial (Polynomial a) (Polynomial b) = polynomial (zipWithDefault add zero zero a b)
 
 -- | Multiplies a polynomial by a scalar, i.e. a value from the coefficient's field
@@ -154,10 +159,19 @@ trim p = Polynomial $ trim' $ coeffs p
 mapPolynomial :: (Field b) => (a -> b) -> Polynomial a -> Polynomial b
 mapPolynomial f = polynomial . map f . coeffs
 
+computePolynomialAt :: Ring a => Polynomial a -> a -> a
+computePolynomialAt (Polynomial as) x
+    = foldl' add zero valueByDegrees
+    where
+        valueByDegrees = map (\(a, pow) -> if a == zero then zero else a `mult` (powers !! pow)) $ withIndex as
+        powers = iterate (mult x) one
+
 applyPolynomial :: Ring b => (a -> b -> b) -> Polynomial a -> b -> b
 applyPolynomial f (Polynomial as) x
-    = foldr add zero valueByDegrees
-    where valueByDegrees = map (\(a, pow) -> a `f` (iterate (mult x) one !! pow)) $ withIndex as
+    = foldl' add zero valueByDegrees
+    where
+        valueByDegrees = map (\(a, pow) -> a `f` (powers !! pow)) $ withIndex as
+        powers = iterate (mult x) one
 
 instance (Field a) => Ring (Polynomial a) where
     -- takes each coeff and adds them together; in case there's more coeffs on one side,

@@ -92,7 +92,7 @@ byteMod (Byte a) (Byte b) = Byte (a `polyMod` b)
 instance Ring Byte where
     zero = Byte zero
     one  = Byte one
-    add (Byte p) (Byte q)  = Byte (add p q)
+    add (Byte p) (Byte q)  = Byte (add p q) `byteMod` irreducibleByte
     add_inverse (Byte p)   = Byte (add_inverse p)
     mult (Byte p) (Byte q) = Byte (mult p q) `byteMod` irreducibleByte
 

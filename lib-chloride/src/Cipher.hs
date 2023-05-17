@@ -38,15 +38,32 @@ bytesToRows bytes = map wordFromList $ rowMajorMatrix 4 bytes
 transposeBlock :: HasCallStack => Block -> Block
 transposeBlock = map wordFromList . transpose . map asBytes
 
-showBlock :: [Byte] -> String
-showBlock bytes
-    = "    |" ++ intercalate "|\n    |" (map show $ bytesToRows bytes) ++ "|"
+showByteBlock :: [Byte] -> String
+showByteBlock = showBlock . bytesToColumns
+
+showBlock :: Block -> String
+showBlock blk
+    = "    |" ++ intercalate "|\n    |" (map show $ transposeBlock blk) ++ "|"
 
 encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 encrypt key input
     | length input /= 4*nb = error $ "The input must have a size of 16 bytes (got " ++ show (length input) ++ " bytes instead)"
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
-    | otherwise = trace ("Encrypting:\n" ++ showBlock input ++ "\nwith key:\n" ++ showBlock key) $ cipher key input
+    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key input
+    where
+        isLegalKey key = case length key of
+            16 -> True -- 128-bit
+            24 -> True -- 196-bit
+            32 -> True -- 256-bit
+            _  -> False
+
+decrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+decrypt key input
+    | length input /= 4*nb = error $ "The input must have a size of 16 bytes (got " ++ show (length input) ++ " bytes instead)"
+    | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
+    | otherwise = trace ("Decrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        decipher key input
     where
         isLegalKey key = case length key of
             16 -> True -- 128-bit
@@ -57,6 +74,12 @@ encrypt key input
 cipher :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 cipher key input =
     concatMap asBytes $ cipherFunc key' (bytesToColumns input)
+    where
+        key' = KeyData (bytesToColumns key) 0
+
+decipher :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+decipher key input =
+    concatMap asBytes $ invCipherFunc key' (bytesToColumns input)
     where
         key' = KeyData (bytesToColumns key) 0
 
@@ -79,9 +102,38 @@ cipherFunc key =
                 shiftRows,
                 mixColumns,
                 addRoundKey key,
-                cipherLoop (i+1) newKey
+                cipherLoop (i+1) (nextKey key)
             ]
-            where newKey = nextKey key
+
+showLine :: Block -> String
+showLine blk = concatMap (showHex . Byte.asInt) $ concatMap asBytes blk
+
+invCipherFunc :: HasCallStack => KeyData -> Block -> Block
+invCipherFunc key =
+        sequenceF [addRoundKey (head keys), cipherLoop 1 (keys !! 1)]
+    where
+        -- the way we handle keys is kinda catching backup to us here but... whatever, perf
+        -- isn't important here so who cares
+        -- reverse forces the whole list into WHNF, so we'll only compute the iterations once
+        keys :: [KeyData]
+        keys = reverse (take (nr key + 1) $ iterate nextKey key)
+        cipherLoop :: HasCallStack => Int -> KeyData -> Block -> Block
+        cipherLoop i key
+            -- in case it's the last round, we don't want to call MixColumns nor do
+            -- any recursive stuff; instead of doing an if/else inside the list, we
+            -- just split the cases here for simplicity
+            | i == nr key = sequenceF [
+                invShiftRows,
+                invSubBytes,
+                addRoundKey key
+            ]
+            | otherwise = trace ("Using key " ++ show (getKey key) ++ " for #" ++ show i) sequenceF [
+                invShiftRows,
+                invSubBytes,
+                addRoundKey key,
+                invMixColumns,
+                cipherLoop (i+1) (keys !! (i+1))
+            ]
 
 -- §5.1.1 / SubBytes
 
@@ -90,19 +142,68 @@ subWord word = wordFromList $ map subByte $ asBytes word
 subBytes :: HasCallStack => Block -> Block
 subBytes = map subWord
 
-subByte :: HasCallStack => Byte -> Byte
-subByte b = byte (reverse $ map subBit $ withIndex bits) `add` c
+subByte :: Byte -> Byte
+subByte b = applyPolynomial mult p b `byteMod` irreducibleByte
     where
-        -- b(i) + b(i + 4 % 8) + b(i + 5 % 8) + b(i + 6 % 8) + b(i + 7 % 8) + c(i)
-        subBit (bi, i) = foldr add zero
-            [ bi
-            , bits !! ((i + 4) `mod` 8)
-            , bits !! ((i + 5) `mod` 8)
-            , bits !! ((i + 6) `mod` 8)
-            , bits !! ((i + 7) `mod` 8)
-            ]
-        c = bcdByte 01100011
-        bits = reverse $ asBits $ mult_inverse b
+        -- from "The Design of Rjindael (2002), Appendix C p.212"
+        -- This is the lagrange polynomial for the affine transform
+        -- (matrix + constant), and since we're operating over a finite
+        -- field, "interpolating" over every element is finding an exact
+        -- expression of the value
+        p = polynomial (
+                                       byteFromInt 0x63 :   -- degree 0
+                replicate 126 zero ++ [byteFromInt 0x8f] ++ -- degree 127
+                replicate 63 zero ++  [byteFromInt 0xb5] ++ -- degree 191
+                replicate 31 zero ++  [byteFromInt 0x01] ++ -- degree 223
+                replicate 15 zero ++  [byteFromInt 0xf4] ++ -- degree 239
+                replicate 7 zero ++   [byteFromInt 0x25] ++ -- degree 247
+                replicate 3 zero ++   [byteFromInt 0xf9] ++ -- degree 251
+                replicate 1 zero ++   [byteFromInt 0x09] ++ -- degree 253
+                                      [byteFromInt 0x05]    -- degree 254
+            )
+
+-- subByte :: HasCallStack => Byte -> Byte
+-- subByte b = byte (reverse $ map subBit $ withIndex bits) `add` c
+--     where
+--         -- b(i) + b(i + 4 % 8) + b(i + 5 % 8) + b(i + 6 % 8) + b(i + 7 % 8) + c(i)
+--         subBit (bi, i) = foldr add zero
+--             [ bi
+--             , bits !! ((i + 4) `mod` 8)
+--             , bits !! ((i + 5) `mod` 8)
+--             , bits !! ((i + 6) `mod` 8)
+--             , bits !! ((i + 7) `mod` 8)
+--             ]
+--         c = bcdByte 01100011
+--         bits = reverse $ asBits $ mult_inverse b
+
+invSubWord :: HasCallStack => Column -> Column
+invSubWord word = wordFromList $ map invSubByte $ asBytes word
+invSubBytes :: HasCallStack => Block -> Block
+invSubBytes = map invSubWord
+
+invSubByte :: HasCallStack => Byte -> Byte
+-- to be completely "pure," we should use a polynomial P1(X) that's the reciprocal
+-- of the P(X) used in SubByte(); however, P1(X) has *a lot* of coefficients (256 to
+-- be exact, just compose X^254 and p_f1, and then reduce cyclic/useless powers of X),
+-- which makes both typing it cumbersome and applying it very slow.
+-- Instead, we only use a polynomial for the affine transform (p.37 of "The Design
+-- of Rjindael" (2002)), and then invert the resulting byte; this is a lot faster
+-- and involves a lot less coefficients than applying P1(X) directly.
+invSubByte b = mult_inverse (applyPolynomial mult p_f1 b `byteMod` irreducibleByte)
+    where
+        -- found by doing lagrange interpolation on the table for f^-1
+        -- given in Appendix C of "The Design of Rjindael" (2002)
+        p_f1 = polynomial (
+                                     [byteFromInt 0x05,    -- degree 0
+                                      byteFromInt 0x05,    -- degree 1
+                                      byteFromInt 0xfe] ++ -- degree 2
+                replicate 1 zero ++  [byteFromInt 0x7f] ++ -- degree 4
+                replicate 3 zero ++  [byteFromInt 0x5a] ++ -- degree 8
+                replicate 7 zero ++  [byteFromInt 0x78] ++ -- degree 16
+                replicate 15 zero ++ [byteFromInt 0x59] ++ -- degree 32
+                replicate 31 zero ++ [byteFromInt 0xdb] ++ -- degree 64
+                replicate 63 zero ++ [byteFromInt 0x6e]    -- degree 128
+            )
 
 -- §5.1.2 / ShiftRows
 
@@ -110,9 +211,18 @@ rotWordLeft :: HasCallStack => Word -> Word
 rotWordLeft w = word hl lh ll hh
     where (hh, hl, lh, ll) = asByteTuple w
 
+rotWordRight :: HasCallStack => Word -> Word
+rotWordRight w = word ll hh hl lh
+    where (hh, hl, lh, ll) = asByteTuple w
+
 shiftRows :: HasCallStack => Block -> Block
 -- Basically, we're just doing: transposeBlock [r0, rotWord r1, rotWord $ rotWord r2, rotWord $ rotWord $ rotWord r3]
 shiftRows cols = transposeBlock $ map (\(r, i) -> iterate rotWordLeft r !! i) $ withIndex rows
+    where
+        rows = transposeBlock cols
+
+invShiftRows :: HasCallStack => Block -> Block
+invShiftRows cols = transposeBlock $ map (\(r, i) -> iterate rotWordRight r !! i) $ withIndex rows
     where
         rows = transposeBlock cols
 
@@ -130,7 +240,7 @@ mixColumns = map (mult $ wordFromInt 0x01010302)
         --         s3' = (bcdByte 10 `mult` s3) `add` (bcdByte 11 `mult` s0) `add` s1 `add` s2
 
 invMixColumns :: HasCallStack => Block -> Block
-invMixColumns = map (mult $ wordFromInt 0x0e0b0d09)
+invMixColumns = map (mult $ wordFromInt 0x090d0b0e)
 
 -- §5.1.4 / AddRoundKey
 
