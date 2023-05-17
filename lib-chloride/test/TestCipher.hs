@@ -17,7 +17,7 @@ testCipher =
 
 testSubBytes :: HasCallStack => IO Bool
 testSubBytes = newTest "SubByte" $
-    zip (map (subByte . byteFromInt) [0x0..0xff]) sbox'
+    zip (map (subByte . byteFromInt) [0x0..0xff]) sbox
 
 testInvSubBytes :: HasCallStack => IO Bool
 testInvSubBytes = newTest "InvSubByte" $
@@ -77,6 +77,9 @@ testInvMixColumns
         ), (
             invMixColumns $ map wordFromInt [0xf4bcd454, 0x32e554d0, 0x75f1d6c5, 0x1dd03b3c],
                             map wordFromInt [0x36339d50, 0xf9b53926, 0x9f2c092d, 0xc4406d23]
+        ), (
+            invMixColumns $ map wordFromInt [0x5f726415, 0x57f5bc92, 0xf7be3b29, 0x1db9f91a],
+                            map wordFromInt [0x6353e08c, 0x0960e104, 0xcd70b751, 0xbacad0e7]
         )
     ]
 
@@ -92,8 +95,8 @@ testAddRoundKey
         )
     ]
 
-sbox' :: [Byte]
-sbox' = map byteFromInt
+sbox :: [Byte]
+sbox = map byteFromInt
       [ 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67,
         0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59,
         0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7,

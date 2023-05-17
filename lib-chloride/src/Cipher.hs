@@ -105,9 +105,6 @@ cipherFunc key =
                 cipherLoop (i+1) (nextKey key)
             ]
 
-showLine :: Block -> String
-showLine blk = concatMap (showHex . Byte.asInt) $ concatMap asBytes blk
-
 invCipherFunc :: HasCallStack => KeyData -> Block -> Block
 invCipherFunc key =
         sequenceF [addRoundKey (head keys), cipherLoop 1 (keys !! 1)]
@@ -127,7 +124,7 @@ invCipherFunc key =
                 invSubBytes,
                 addRoundKey key
             ]
-            | otherwise = trace ("Using key " ++ show (getKey key) ++ " for #" ++ show i) sequenceF [
+            | otherwise = sequenceF [
                 invShiftRows,
                 invSubBytes,
                 addRoundKey key,
@@ -230,14 +227,6 @@ invShiftRows cols = transposeBlock $ map (\(r, i) -> iterate rotWordRight r !! i
 
 mixColumns :: HasCallStack => Block -> Block
 mixColumns = map (mult $ wordFromInt 0x01010302)
-    -- map f
-        -- where
-        --     f w = word s0' s1' s2' s3' where
-        --         (s0, s1, s2, s3) = asByteTuple w
-        --         s0' = (bcdByte 10 `mult` s0) `add` (bcdByte 11 `mult` s1) `add` s2 `add` s3
-        --         s1' = (bcdByte 10 `mult` s1) `add` (bcdByte 11 `mult` s2) `add` s3 `add` s0
-        --         s2' = (bcdByte 10 `mult` s2) `add` (bcdByte 11 `mult` s3) `add` s0 `add` s1
-        --         s3' = (bcdByte 10 `mult` s3) `add` (bcdByte 11 `mult` s0) `add` s1 `add` s2
 
 invMixColumns :: HasCallStack => Block -> Block
 invMixColumns = map (mult $ wordFromInt 0x090d0b0e)
