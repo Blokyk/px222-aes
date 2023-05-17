@@ -1,3 +1,5 @@
+# Séance 1
+
 # Séance 2
 
 ## Objectifs
@@ -53,3 +55,32 @@ Zoë:
 Léa:
   - [x] écrire des tests pour Word
   - [x] étendre l'implémentation de Word (par ex. utilitaires)
+
+# Séance 5
+
+## Objectifs
+
+Commun:
+  - [x] finir encryption/decryption
+
+Zoë:
+  - [x] Vaincre le dragon de la division euclidienne
+
+Léa:
+  - [x] faire la partie inverse du cipher
+
+# Séance 6
+
+## Objectifs
+
+Commun:
+  - [ ] Réflechir à l'implémentation en C (+ makefile etc ?)
+  - [ ] Compléter le carnet de bord et ajouter des infos
+
+Léa:
+  - [ ] Faire différent "Block cipher mode" (ECB + CBC + ...)
+  - [ ] Doc: API
+
+Zoë:
+  - [ ] Ajouter infos technique au CdB
+  - [ ] Doc: choix techniques
