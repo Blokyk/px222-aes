@@ -77,26 +77,17 @@ divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomi
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
     | divisor == zero                  = throw DivideByZero
     | degree dividend < degree divisor = (nullPolynomial, trim dividend)
-    -- this branch is special: if we end up here, we're already inside another divEuclide call;
-    -- this means that it's okay to have leading zeroes, actually
-    | last a == zero
-        = if degree dividend == degree divisor
-            then (Polynomial [zero], trim dividend)
-            else
-                let
-                    (Polynomial q, r) = divEuclide (Polynomial $ init a) divisor
-                in (Polynomial (q ++ [zero]), r)
     | otherwise
-        = (Polynomial (subFactors ++ [factor]), reste)
+        = (Polynomial (subFactors ++ replicate zeroFactorCount zero ++ [factor]), reste)
             where
                 factor                         = diviser (last a) (last b)
+                subRes = dividend `sub` multScalaire factor (padUntilDegree (degree dividend) divisor)
                 (Polynomial subFactors, reste) = divEuclide subRes divisor
-                trimmedRes = trim subRes
-                subRes = Polynomial (init subResCoeffs)
-                (Polynomial subResCoeffs) = dividend `sub'` multScalaire factor (padUntilDegree (degree dividend) divisor)
-                -- needed to avoid trimming zeroes
-                sub' :: Field a => Polynomial a -> Polynomial a -> Polynomial a
-                sub' p q = Polynomial (zipWithDefault add zero zero (coeffs p) (coeffs $ add_inverse q))
+                zeroCount = degree dividend - degree subRes - 1
+                zeroFactorCount =
+                    if zeroCount == 0
+                        then 0
+                        else min zeroCount (degree dividend - degree divisor)
 
 -- | Returns the first polynomial modulo the second
 polyMod :: Field a => Polynomial a -> Polynomial a -> Polynomial a
