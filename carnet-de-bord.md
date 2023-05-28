@@ -1,6 +1,12 @@
-# Séance 1
+# Séance 1 -- 21/03/2023
 
-# Séance 2
+## Notes de séance
+
+Nous avons passer la plupart de la séance à lire la specification AES et à
+réfléchir à la structure et l'implémentation du projet en haskell (e.g. comment
+représenter les polynômes ou les données d'entrée)
+
+# Séance 2 -- 5/04/2023
 
 ## Objectifs
 
@@ -8,7 +14,7 @@ Commun:
   - commencer l'implémentation des polynomes en Haskell
 
 Stretch:
-  - réfléchir à l'impl de GF(2^8) en utilisant GF(2)
+  - réfléchir à l'impl de $GF(2^8)$ en utilisant $GF(2)$
 
 Léa:
   - finir la lecture de la spec AES
@@ -16,17 +22,46 @@ Léa:
   - écrire des tests pour l'impl des polynomes
 
 Zoë:
-  - finir impl de GF(2) / Z/2Z
+  - finir impl de $\mathbb{Z}/2\mathbb{Z}$ (i.e. $GF(2)$)
   - tenter d'implémenter modulo de polynôme
-  - lire la spec + bien comprendre les polynomes dans GF(2)
+  - lire la spec + bien comprendre les polynomes dans $GF(2)$
 
+## Retrospective
 
-# Séance 3
+Depuis la dernière séance, Nous avons setup l'environment de travail, par exemple en
+établissant des fichiers pour le linting (`.editorconfig` et `hlint.yaml`), mais
+surtout en utilisant Stack pour gérer et structurer le projet. Nous espérons que
+l'investissement temporel nécessaire à cette organisation se révélera bénéfique,
+notamment pour la mise en place de tests, mais aussi pour l'utilisation d'outils
+externes (e.g. IDE).
+
+De plus, on a défini `Group`, `Ring` et `Field`, et avons également commencé à travailler
+sur `Bit`.
+
+## Notes de séance
+
+Pendant la séance, multiples tests ont été écrits, d'abord sous forme de scripts GHCI,
+puis, pour mieux s'incorporer avec le système Stack, en code source "classique," (dans `test/`)
+qui vérifie l'exactitude des résultats de certaines expressions à l'aide de `Control.Exception.assert`.
+
+On a également complété l'implémentation de `Bit`, en y ajoutant des instances pour `Ring`
+et `Field`.
+
+L'implémentation de `Polynomial` fut aussi initiée. Au début, nous pensions
+éventuellement faire une typeclass avec quelques méthodes à son coeur, soutenu de
+fonctions auxiliaires agissant sur des instances de cette classe, mais au final
+la "surface" de la classe se réduisait à celle d'une liste, donc nous avons préféré
+faire un datatype paramétrisé par le type de ses coefficients, ce qui a rendu
+l'implémentation beaucoup rapide et facile.
+Bien que cette dernière soit encore incomplète, nous avons déjà codé la division
+euclidienne, qui est une importante partie des mécanismes suivants.
+
+# Séance 3 -- 18/04/2023
 
 ## Objectifs
 
 Commun:
-  - [ ] implémentation de 4.3 (GF(256))
+  - [ ] implémentation de 4.3 $(GF(256))$
   - [ ] écriture et planification du pseudocode de la partie Chiffrement (5)
 
 Zoë:
@@ -40,13 +75,69 @@ Léa:
   - [ ] écriture des tests
   - [ ] commencer l'implémentation du point 5 de la spec
 
+## Retrospective
 
-# Séance 4
+Tout d'abord, l'implémentation des polynômes a été presque complétée depuis la
+dernière séance, ce qui nous a permis de rapidement commencé l'implémentation
+de `Byte` $(GF(256))$. Une partie de notre énergie fut aussi dépensée à écrire
+de meilleur outils pour nous mêmes, comme par exemple l'affichage de polynôme,
+ou des utilitaires pour plus facilement manipuler nos nouveaux types. Cela nous
+évite aussi de faire des erreurs "bêtes," comme créer des bytes avec 9 chiffres,
+car nos petits utils peuvent vérifier la cohérence des données que l'on rentre. C'est
+la raison pour laquelle nous avons par ex. choisi de ne pas exposer le constructeur
+de `Polynomial` directement, mais à la place d'avoir différentes fonctions
+permettant de créer un nouveau polynôme (cela nous garantis notamment un invariant
+que l'on utilise souvent dans l'implémentation de `Polynomial`: le coefficient de
+plus haut degré n'est jamais égal à zéro.)
+
+### Une petite note sur les tests
+
+Un autre aspect qui a été travaillé entre les séances est le harnais de tests:
+avec l'expansion de la surface à tester, il devient nécessaire de séparer chaque
+ensemble de tests, ainsi que de rendre leur écriture *et* lecture plus rapide et
+facile. Ici aussi, nous avons choisi d'investir un peu plus de temps pour écrire
+quelques utilitaires permettant de nous rapprocher de cette clarté idéale.
+Un autre désavantage des tests effectué en utilisant des simples `assert`s est
+le manque de feedback: si le test réussi, on voit simplement s'afficher un
+autre "OK," et sinon l'application crashe immédiatement sans donner la "vraie"
+valeur ni celle attendue. Le premier avantage des fonctions de `test/TestUtils.hs`
+est qu'elles fournissent plus d'information dans chacun des cas (e.g. dans le cas
+d'un échec, la valeur "réelle" et la valeur attendue sont toutes les deux affichées),
+et permettent aussi de gérer des ensembles de tests plus facilement (e.g. on peut
+donner un nom à un groupe de tests, et un ensemble ne s'arrête pas juste au premier
+test qui échoue).
+
+Dans les faits, nous obtenons la "hiérarchie" suivante pour les tests:
+```
+driver (e.g. do-block dans test/Main.hs)
+    composant "Stuff"     <- ensemble de tests pour le module Stuff
+        unité "foo"       <- tests pour la fonction Stuff.foo
+            foo 1 == 2    <- cas de test #1
+            foo 0 == -1   <- cas de test #2
+            foo -10 == 10 <- cas de test #3
+        unité "bar"
+            ...
+    composant "Things"
+        ...
+```
+
+## Notes de séance
+
+Au final, la division entre bytes s'annonce plus corsé que prévu,
+notamment à cause de l'algorithme d'euclide nécessaire, dont nous n'avons
+pour l'instant pas un prototype qui marche. Malgré nos efforts, nous ne sommes
+pas certains de la cause exact du problème.
+
+En plus de cela, nous avons également commencé à réfléchir à l'implémentation
+du cipher plus en détail, comme par exemple comment transporter les clés entre
+rounds, ou comment encoder le fameux "State" et le passer entre fonctions.
+
+# Séance 4 -- 3/05/2023
 
 ## Objectifs
 
 Commun:
-  - [x] écriture du pseudo-code pour l'inversion de polynome/euclide étentdu
+  - [x] écriture du pseudo-code pour l'inversion de polynôme/Euclide étendu
 
 Zoë:
   - [x] réflechir à la structure du cipher + début d'impl
@@ -56,7 +147,19 @@ Léa:
   - [x] écrire des tests pour Word
   - [x] étendre l'implémentation de Word (par ex. utilitaires)
 
-# Séance 5
+## Rétrospective
+
+### Implémentation du cipher
+- monade State + pourquoi ne pas l'utiliser
+- comment on gère les clés
+
+## Notes de séance
+
+### Le problème avec l'inverse
+
+- bug dans l'inversion => bug dans la div euclidienne => bug quand zéros dans le dividende
+
+# Séance 5 -- 17/05/2023
 
 ## Objectifs
 
@@ -64,23 +167,86 @@ Commun:
   - [x] finir encryption/decryption
 
 Zoë:
-  - [x] Vaincre le dragon de la division euclidienne
+  - [x] vaincre le dragon de la division euclidienne
+  - [x] faire les fonctions du cipher inverse (invSubBytes, invShiftRows, invMixColumns)
 
 Léa:
-  - [x] faire la partie inverse du cipher
+  - [x] écrire le "driver" du cipher inverse (i.e. invCipherFunc)
 
-# Séance 6
+## Rétrospective
+
+Bien qu'il reste environ deux semaines avant le "vrai" jalon, il semblait impératif
+que le cipher soit finit, ne serait-ce que dans un état "basique." Peu de temps après
+la 4e séance, l'encryption était fonctionnelle, et il ne restait que la decryption
+à faire. Cette dernière s'est révélée relativement facile à implémenter, en partie
+grâce à l'expérience gagnée lors de l'écriture du cipher.
+
+Une petite note cependant sur `subByte` et `invSubByte`: bien que notre implémentation
+initiale était basée sur la multiplication de byte (comme spécifié dans la spec),
+nous avons vite était informé que, dans l'esprit "mathématique" de cette version,
+il serait à la place préférable d'utiliser une multiplication de polynôme. N'ayant
+à l'époque pas plus d'indication, nous avons cherché d'autres ressources, jusqu'à
+tomber sur *The Design of Rjindael* (2002), un livre écrit par les auteurs originaux
+de l'algorithme éponyme, contenant plus de détails quant à certains aspects d'AES.
+Dans la section sur `SubByte()` et son inverse, on peut trouver une remarque affirmant
+qu'il est possible d'effectuer ces opérations avec une simple multiplication de
+polynômes, et que ces-dits polynômes peuvent être déterminés en utilisant une
+interpolation de Lagrange. Nous avons donc utilisé cette méthode pour déterminer
+les polynômes correspondant à `subByte` et `invSubByte`
+
+### Division euclidienne 2: le retour
+
+Correctement implémenter la division euclidienne n'a pas été facile, et a notamment
+requis de générer un grand nombre de tests aléatoires pour s'assurer que "fixer" un
+bug n'allait pas juste en créer un autre, comme c'était le cas avec les précédentes
+tentatives.
+
+Pour rappel, comme nous l'avons découvert [à la séance précédente](#le-problème-avec-linverse),
+l'algorithme ne gérait pas correctement les divisions lorsqu'une dividende intermédiaire
+contenait des zéros, parce que la façon usuelle dont nous construisons les polynômes
+éliminent les coefficients nuls de plus haut degré. Nous avons donc deux solutions
+possibles:
+
+    1. garder les coefficients nuls et les traiter différemment
+    2. déterminer le nombre de zéros à insérer dans le quotient
+
+Bien que l'option 1. paraît être la plus simple, c'est aussi la moins élégante et
+surtout la plus dangereuse: en cassant temporairement un tel invariant, nous devons
+être prudent quant aux opérations et fonctions que nous utilisons. Ainsi, nous avons
+choisi de commencer par explorer la seconde option. Cependant, trouver une formule
+pour le nombre de zéros nécessaires qui couvrait toutes les possibilités se révéla
+plus dur que prévu (là encore, les tests automatiques mentionnés plus haut furent
+vitaux), et, pressés pas le temps, nous avons finalement opté pour option 1., ce
+qui, au final, n'était pas aussi "horrible" que nous l'avions anticipé: nous n'avions
+qu'une seule fonction à réimplémenter, et la violation de l'invariant a pu être
+restreinte à `divEuclide` seulement. Bien que le code final est toujours relativement
+inesthétique, pour l'instant cette implémentation semble marcher.
+
+## Notes de séance
+
+Pendant la séance, nous avons d'abord mis au clair certaines parties de l'algorithme
+qui n'était pas forcément comprises de la même façon par nous deux. Ensuite, on a
+commencé à "décortiquer" quelles parties seraient les plus rapide à implémenter en C
+(enfin plutôt celles qui requiert le moins de théorie/mathématique pure plutôt que
+des opérations sur des bytes et bits).
+
+Nous avons aussi discuté de ce qu'il nous restait à faire pour l'implémentation en
+haskell, et en avons conclu qu'un petit ménage au niveau de l'API ne serait pas de
+trop, mais aussi qu'implémenter différent mode de cipher serait une bonne idée qui
+ne devrait pas prendre *trop* de temps.
+
+# Séance 6 -- 5/06/2023
 
 ## Objectifs
 
 Commun:
-  - [ ] Réflechir à l'implémentation en C (+ makefile etc ?)
-  - [ ] Compléter le carnet de bord et ajouter des infos
+  - [ ] réflechir à l'implémentation en C (+ makefile etc ?)
+  - [ ] compléter le carnet de bord et ajouter des infos
 
 Léa:
-  - [ ] Faire différent "Block cipher mode" (ECB + CBC + ...)
-  - [ ] Doc: API
+  - [ ] faire différent "Block cipher mode" (ECB + CBC + ...)
+  - [ ] doc: API
 
 Zoë:
-  - [ ] Ajouter infos technique au CdB
-  - [ ] Doc: choix techniques
+  - [ ] ajouter infos technique au CdB
+  - [ ] doc: choix techniques
