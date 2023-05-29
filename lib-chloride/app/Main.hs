@@ -7,6 +7,8 @@ import Word
 import Algebra
 import Data.Foldable (Foldable(foldl'))
 
+import CipherUtils
+
 main :: IO ()
 main
     = do

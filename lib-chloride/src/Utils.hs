@@ -34,7 +34,7 @@ padLeft n x xs = replicate (n - length xs) x ++ xs
 --
 -- sequenceF [f, g, h] 0 = h(g(f(0)))
 sequenceF :: [a -> a] -> a -> a
-sequenceF = foldl (flip (.)) id
+sequenceF = foldl' (flip (.)) id
 -- sequenceF fs x = foldl' (\x' f -> f x') x fs
 
 showHex :: Integral a => a -> [Char]
@@ -55,8 +55,7 @@ columnMajorMatrix _ [] = []
 columnMajorMatrix n l  = row : columnMajorMatrix n rest
     where (row, rest) = splitAt n l
 
-chunksOf :: [a] -> Int -> [[a]]
-chunksOf [] _ = [[]]
-chunksOf list 0 = [list]
-chunksOf x n = chunk :chunksOf rest n
-             where (chunk,rest) = splitAt n x 
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs = chunk : chunksOf n rest
+             where (chunk, rest) = splitAt n xs
