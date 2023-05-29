@@ -19,8 +19,10 @@ zipWithDefault f a _ [] ys         = map (f a) ys
 zipWithDefault f _ b xs []         = map (`f` b) xs
 zipWithDefault f a b (x:xs) (y:ys) = (f x y) : (zipWithDefault f a b xs ys)
 
+-- returns a list of couples, where in each couple, the first element is an item from the starting list, and the second is its index in said list.
 withIndex :: [a] -> [(a, Int)]
 withIndex l = zip l [0..]
+
 
 padLeft :: Int -> a -> [a] -> [a]
 padLeft n x xs = replicate (n - length xs) x ++ xs

@@ -73,6 +73,10 @@ padUntilDegree n p
     -- in case this is actually the null/zero-polynomial
     | otherwise     = assert (p /= zero) $ padUntilDegree n (raiseDegree p)
 
+
+--divEuclid takes two Polynoms (dividend and divisor) , returns a couple of Polynoms (quotient, rest)
+--and treats 3 cases : if the divisor is zero, if the dividend's degree is greater than the divisor's one and so the quotient is null and the rest is trimmed;
+-- the third case is the operation : the quotient is composed by the sum 
 infixl 7 `divEuclide`
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)

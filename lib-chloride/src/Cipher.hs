@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
+{-# HLINT ignore "Use camelCase" #-}
+{-# HLINT ignore "Use :" #-}
+{-# HLINT ignore "Use drop" #-}
 module Cipher where
 
 import Prelude hiding (Word)
@@ -22,6 +25,7 @@ type Block = [Column]
 nb :: Int
 nb = 4
 
+-- return the number of times the key will be encrypted, depending on its length
 nr :: KeyData -> Int
 nr key = case length (getKey key) of
         4 -> 10 -- 128-bit key => 10 rounds
@@ -312,3 +316,25 @@ nextKey (KeyData key iteration) =
                 -- if (Nk = 8) and (i = 4), then we apply SubWord on the previous column first
                 c' 4 | nk == 8 = subWord prevCol
                 c' _ = prevCol
+
+chunksOf :: [Byte] -> Int -> [[Byte]]
+chunksOf [] _ = [[bcdByte 0]]
+chunksOf list 0 = [list]
+chunksOf x n = [take n x] ++ chunksOf (snd$ splitAt n x ) n
+
+ecb_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+ecb_encrypt key input
+    {- | length input /= 4*nb = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key block !! 1
+             where 
+                block = chunksOf 4 input  -}
+    | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
+    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key input
+    where
+        isLegalKey key = case length key of
+            16 -> True -- 128-bit
+            24 -> True -- 196-bit
+            32 -> True -- 256-bit
+            _  -> False
+
