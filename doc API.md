@@ -1,6 +1,7 @@
 # Description
 ---
-La librairie lib-chloride permet d'encrypter/ décrypter une liste de Byte en utilisant la méthode AES, ou avec différentes méthodes s'appuyant sur l'AES (mode ECB, CBC, etc...)
+La librairie lib-chloride permet d'encrypter/ décrypter une liste de Byte en utilisant
+l'algorithme AES, ou avec différentes méthodes s'appuyant sur l'AES (mode ECB, CBC, etc...)
 
 ## Démarrage rapide
 
@@ -22,17 +23,37 @@ main = do
     putStrLn $ showByteBlock inv
 ```
 
-Ici, nos données sont initialement représentées sous forme d'entier (`Int`), qui sont ensuite converti en liste de bytes par `intsAsCipherData`. On encrypte d'abord ce bloc avec la clé donnée, pour ensuite décrypter le résultat de l'opération précédente, ce qui devrait nous donner le bloc initial.
+Ici, nos données sont initialement représentées sous forme d'entier (`Int`), qui sont
+ensuite converti en liste de bytes par `intsAsCipherData`. On encrypte d'abord ce bloc
+avec la clé donnée, pour ensuite décrypter le résultat de l'opération précédente, ce
+qui devrait nous donner le bloc initial.
 
-## Fonctionnement
-Le Cipher prend en entrée deux tableau de Byte, la clé et le bloc.
-Un Byte est un type qui correspondn à un Polynome de Bits, qu'on peut représenter ainsi `Byte $ Polynomial Bit`.
-Le Cipher encode à la fois le bloc et la clé.
-Dans un premier temps, le Cipher modifie le bloc à l'aide de fonctions comme  SubBytes, ShiftRows, MixColumn et  Round Key . Les trois premières fonctions modifient le bloc sans utiliser la clé, et c'est la quatrième ( AddRoundKey) qui utilise la clé. Ensuite le bloc trouvé devient le nouveau bloc à coder et ainsi de suite, dix fois donc.
-De son côté, la clé initiale n'est utilisée qu'une fois puisqu'elle est après elle même encryptée : on utilise la fonction nextKey pour créer la clé suivante. 
-Au contraire de ce que recommande la spec ( initialiser avant une encryption un tableau de dix clés), le choix qui a été fait a été celui de générer des clefs à la demande, ce qui a seulement nécessité d'associer un numéro à chaque clé.
-Ce choix technique permettait une meilleure lisbilité du code
 ## Autres types de chiffrement
 
-Il est possible de chiffrer un bloc avec une méthode dite *Electronic Codebook* (ECB), qui permet de chiffrer plus de 16 bytes à la fois. Pour cela il suffit de remplacer l'appel à `encrypt` par `encryptECB`.
-Une autre technique de chiffrement est le *Cipher Block Chaining* (CBC), qui, pour chaque bloc de 16 bytes, utilise le résultat du chiffrement précédent et le XOR avec le bloc à encrypter. Cette fonctionnalité est disponible en utilisant `encryptCBC`
+Il est possible de chiffrer un bloc avec une méthode dite *Electronic Codebook* (ECB),
+qui permet de chiffrer plus de 16 bytes à la fois. Pour cela il suffit de remplacer
+l'appel à `encrypt` par `encryptECB`.
+
+Une autre technique de chiffrement est le *Cipher Block Chaining* (CBC), qui, pour
+chaque bloc de 16 bytes, utilise le résultat du chiffrement précédent et le XOR avec
+le bloc à encrypter. Cette fonctionnalité est disponible en utilisant `encryptCBC`.
+
+## Fonctionnement
+
+En surface, le cipher prend en entrée deux tableaux de `Byte`s, la clé et le bloc, et
+retourne comme résultat un autre tableau de `Byte`s.
+
+Un `Byte` est un type qui correspond à un Polynôme de Bits, qu'on peut représenter
+avec `newtype Byte = Polynomial Bit`. Le Cipher encode à la fois le bloc et la clé.
+Dans un premier temps, le Cipher modifie le bloc à l'aide de fonctions comme SubBytes,
+ShiftRows, MixColumn et  Round Key . Les trois premières fonctions modifient le bloc
+sans utiliser la clé, et c'est la quatrième ( AddRoundKey) qui utilise la clé. Ensuite
+le bloc trouvé devient le nouveau bloc à coder et ainsi de suite, 10, 12 ou 14 fois
+selon la taille de la clé initiale. De son côté, la clé initiale n'est utilisée qu'une
+fois puisqu'elle est après elle même encryptée : on utilise la fonction nextKey pour
+créer la clé suivante.
+
+Au contraire de ce que recommande la spec (initialiser avant une encryption un tableau
+de clés), le choix qui a été fait a été celui de générer des clefs à la demande, ce
+qui a seulement nécessité d'associer un numéro à chaque clé. Ce choix technique
+permettait une meilleure lisibilité du code
