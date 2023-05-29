@@ -149,25 +149,35 @@ Léa:
 
 ## Rétrospective
 
-<<<<<<< Updated upstream
-- monade State + pourquoi ne pas l'utiliser
-- comment on gère les clés
-=======
 ### Implémentation du cipher
-Lors de l'implémentation du Cipher, la monade State qui était utilisée à finalement été abandonée , qui ne serait pas utiles puisque les changements appliqués à chaque tour au bloc et à la clé ne sont pas visibles par l'utilisateur, qui n'a besoin que de la sortie, donc la dernière étape. 
-De plus, lors de cette séance, l'implémentation et la gestion des clés a été réfléchie. Nous n'avons pas besoin de 
-générer un énorme tableau de dix clés avant de commencer le chiffrage. Il est plus simple d'utiliser qu'une clé à chaque tour et de la modifier en conséquence. On ne garde qu'une seule clé en mémoire, ainsi.
->>>>>>> Stashed changes
+
+Pour implémenter le cipher, nous avions initialement pensé à utilisé la monade `State`,
+qui permet de manipuler un objet avec un côté "pur" et un côté "mutable." Étant donné
+la nature de l'algorithme AES, cela semblait être une plutôt bonne idée. Cependant,
+une fois implémentée, elle n'était pas si utile que ça, surtout couplé avec la gestion
+des clés que nous avons choisi (cf. paragraphe suivant). L'utilisation de `State`
+partout finissait par nuire à la lisibilité et alourdir le code, surtout étant donné
+que toutes les modifications d'état se faisait l'une à la suite des autres, et n'était
+pas visible dans leur globalité, la plupart des opérations étant plutôt bien encapsulées,
+puisque seules `cipher`/`decipher` devaient vraiment gérer un "état"
+
+De plus, lors de cette séance, l'implémentation et la gestion des clés a été réfléchie.
+Nous n'avons pas besoin de générer un énorme tableau de dix clés avant de commencer le
+chiffrage. Il est plus simple d'utiliser qu'une clé à chaque tour et de la modifier en
+conséquence. On ne garde ainsi qu'une seule clé en mémoire à la fois.
 
 ## Notes de séance
 
-Une bonne partie de la séance fut dédié à mettre au clair comment le bug sur l'inverse pourrait être réglé. Cette séance a aussi permis de réfléchir 
-à l'implémentation du Cipher.
+Une bonne partie de la séance fut dédié à mettre au clair comment le bug sur l'inverse
+pourrait être réglé. Cette séance a aussi permis de réfléchir à l'implémentation du Cipher.
 
 ### Le problème avec l'inverse
-La difficulté rencontrée avec l'inverse n'a pas été simple à surmonter. Un bug en entraînant un autre,
-force a été de constater que l'inversion ne fonctionnait pas à cause d'un bug dans la division euclidienne , qui ne fonctionnait pas quand il
-y avait des zéros dans le dividende. Il s'agit donc d'un prochain objectif ; fixer la division euclidienne.
+
+La difficulté rencontrée avec l'inverse n'a pas été simple à surmonter. Un bug en
+entraînant un autre, force a été de constater que l'inversion ne fonctionnait pas
+à cause d'un bug dans la division euclidienne, qui ne fonctionnait pas quand il
+y avait des zéros dans le dividende. Il s'agit donc du prochain objectif: fixer
+la division euclidienne.
 
 # Séance 5 -- 17/05/2023
 
