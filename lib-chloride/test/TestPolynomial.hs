@@ -1,19 +1,15 @@
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 module TestPolynomial(testPolynomial) where
 
-import Prelude hiding (null)
+import Prelude hiding (quot, rem)
 
 import Runner
 
-import Algebra hiding (polynomial)
+import Algebra
 import Bit
-import qualified Algebra.Polynomial (polynomial)
 
--- makes testing a bit more brief, cause we don't need to specify a type each test
-polynomial :: [Float] -> Polynomial Float
-polynomial = Algebra.Polynomial.polynomial
-
-null :: Polynomial Float
-null = polynomial []
+default (Float)
 
 testPolynomial :: IO ()
 testPolynomial = runTests "Polynôme" [testCtor, testAdd, testMult, testDiv, testMod, testApplyPolynomial, testDivProp]
@@ -34,8 +30,8 @@ testAdd :: HasCallStack => IO Bool
 testAdd =
     newTest "Addition & Subtraction" [
            (
-            add zero null,
-            null
+            add zero zero,
+            zero
         ), (
             add zero (polynomial [6, 4]),
             polynomial [6, 4]
@@ -45,7 +41,7 @@ testAdd =
         ),
 
            (
-            add (polynomial [1, 2, 3]) null,
+            add (polynomial [1, 2, 3]) zero,
             polynomial [1, 2, 3]
         ), (
             add (polynomial [1, 8, 3, 9]) (polynomial [9, 2]),
@@ -53,8 +49,8 @@ testAdd =
         ),
 
            (
-            add_inverse null,
-            null
+            add_inverse zero,
+            zero
         ), (
             add_inverse (polynomial [8, 6, 1, 7]),
             polynomial [-8, -6, -1, -7]
@@ -65,15 +61,15 @@ testMult :: HasCallStack => IO Bool
 testMult =
     newTest "Multiplication" [
           (
-            mult one null,
-            null
+            mult one zero,
+            zero
         ), (
             mult one (polynomial [5, 0]),
             polynomial [5, 0]
         )
         , (
-            mult null (polynomial [1, 0, 8]),
-            null
+            mult zero (polynomial [1, 0, 8]),
+            zero
         ), (
             mult (polynomial [1, 6])  one,
             polynomial [1, 6]
@@ -85,8 +81,8 @@ testMult =
             polynomial [1, 6, 9]
         )
         , (
-            multScalaire 5 null,
-            null
+            multScalaire 5 zero,
+            zero
         ), (
             multScalaire 2 (polynomial [8, 7, 0, 5]),
             polynomial [16, 14, 0, 10]
@@ -97,8 +93,8 @@ testDiv :: HasCallStack => IO Bool
 testDiv =
     newTest "Division" [
            (
-            divEuclide null (polynomial [2, 1]) ,
-            (null, null)
+            divEuclide zero (polynomial [2, 1]) ,
+            (zero, zero)
         ), (
             divEuclide (polynomial [3, 8, 0, 5]) (polynomial [1, 2]),
             (polynomial [4.625, -1.25, 2.5], polynomial [-1.625])
@@ -109,7 +105,7 @@ testDivProp :: HasCallStack => IO Bool
 testDivProp =
     newTest "DivisionProp" $ map (uncurry testPolyDiv) polyPairs
     where
-        polys = [Algebra.Polynomial.polynomial (rotate n l) | n <- [0..3], l <- [[one, one, zero], [one, one, zero, zero, one], [zero, one, one :: Bit]]]
+        polys = [polynomial (rotate n l) | n <- [0..3], l <- [[one, one, zero], [one, one, zero, zero, one], [zero, one, one :: Bit]]]
         polyPairs = [(p, q) | p <- polys, q <- polys]
         testPolyDiv p q = ((rem `add` (quot `mult` q), q), (p, q))
             where (quot, rem) = p `divEuclide` q
@@ -122,14 +118,14 @@ testMod :: HasCallStack => IO Bool
 testMod =
     newTest "Modulo" [
            (
-            polyMod null (polynomial [8, 2]),
-            null
+            polyMod zero (polynomial [8, 2]),
+            zero
         ), (
             polyMod (polynomial [0, 1, 5]) (polynomial [1, 5]),
-            null
+            zero
         ), (
             polyMod (polynomial [-12, -5, -10, 3]) (polynomial [4, -1]),
-            null
+            zero
         ), (
             polyMod (polynomial [3, 8, 0, 5]) (polynomial [1, 2]),
             polynomial [-1.625]
