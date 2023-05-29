@@ -149,11 +149,12 @@ Léa:
 
 ## Rétrospective
 
-### Implémentation du cipher
 - monade State + pourquoi ne pas l'utiliser
 - comment on gère les clés
 
 ## Notes de séance
+
+Une bonne partie de la séance fut dédié à mettre à clair comment le 
 
 ### Le problème avec l'inverse
 
@@ -191,8 +192,26 @@ de l'algorithme éponyme, contenant plus de détails quant à certains aspects d
 Dans la section sur `SubByte()` et son inverse, on peut trouver une remarque affirmant
 qu'il est possible d'effectuer ces opérations avec une simple multiplication de
 polynômes, et que ces-dits polynômes peuvent être déterminés en utilisant une
-interpolation de Lagrange. Nous avons donc utilisé cette méthode pour déterminer
-les polynômes correspondant à `subByte` et `invSubByte`
+interpolation de Lagrange. Bien que cette technique soit habituellement utilisée
+pour des approximations, il est ici possible de déterminer un polynôme dont le
+graphe est strictement équivalent puisque nous sommes dans un corps fini. Ainsi,
+après s'être muni des valeurs attendues pour chaque opération (par exemple en
+utilisant notre implémentation originale), nous avons calculé les coefficients du
+polynôme de Lagrange. Dans le cas de `subByte`, ceci s'est plutôt bien passé, et nous
+a donné le polynôme suivant:
+
+$P(X) = 99 + 143X^{127} + 181X^{191} + X^{223} + 244X^{239} + 37X^{247} + 249X^{251} + 9X^{253} + 5X^{254}$
+
+Cependant, le polynôme correspondant à `invSubByte` s'est révélé être trop complexe:
+il contenait bien trop de coefficients, et était beaucoup trop lent à calculer. Nous
+avons donc opté pour un compromis entre pureté et fonctionnalité: au lieu de déterminer
+un seul polynôme pour toute l'opération, on a choisi de déduire un polynôme pour chaque
+"étape" de la fonction (un pour la substitution inverse, et un pour l'inversion), puis
+de composer leurs *résultats*. Cette démarche fut bien plus fructueuse:
+
+- la substitution correspond à $f^{-1}(X) = 5 + 5X + 254X^2 + 127X^4 + 90X^8 + 120X^{16} +
+  89X^{32} + 219X^{64} + 110X^{128}$
+- l'inversion correspond à $g(X) = X^{254}$
 
 ### Division euclidienne 2: le retour
 
@@ -240,7 +259,7 @@ ne devrait pas prendre *trop* de temps.
 ## Objectifs
 
 Commun:
-  - [ ] réflechir à l'implémentation en C (+ makefile etc ?)
+  - [ ] réfléchir à l'implémentation en C (+ makefile etc ?)
   - [ ] compléter le carnet de bord et ajouter des infos
 
 Léa:
