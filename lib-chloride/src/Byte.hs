@@ -99,7 +99,7 @@ instance Ring Byte where
 instance Field Byte where
     mult_inverse (Byte b)
         | b == zero = zero
-        | otherwise = Byte (modInv b $ asPolynomial irreducibleByte) `byteMod` irreducibleByte
+        | otherwise = Byte (inverseModulo b $ asPolynomial irreducibleByte) `byteMod` irreducibleByte
 
 instance Show Byte where
     show b

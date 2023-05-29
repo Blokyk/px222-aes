@@ -1,4 +1,5 @@
 import TestByte
+import TestCipherInternals
 import TestCipher
 import TestPolynomial
 import TestWord
@@ -10,5 +11,6 @@ main =
         testPolynomial
         testByte
         testWord
+        testCipherInternals
         testCipher
         putStrLn ""

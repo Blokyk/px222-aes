@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
-module CipherUtils where
+module Cipher.Internal.Utils where
 
 import Prelude hiding (Word)
 import Data.List (transpose, intercalate)
@@ -10,21 +10,19 @@ import Utils
 import Byte
 import Word
 
-type Column = Word
-type Key = [Word]
-data KeyData = KeyData { getKey :: Key, keyIteration :: Int } -- "why do we need this?" -> see the code for key expansion at the bottom of the file
-type Block = [Column]
+import Cipher.Internal.Types
+import Algebra (Ring(add))
 
 nb :: Int
 nb = 4
 
 -- return the number of times the key will be encrypted, depending on its length
-nr :: KeyData -> Int
-nr key = case length (getKey key) of
+nr :: Key -> Int
+nr key = case length key of
         4 -> 10 -- 128-bit key => 10 rounds
         6 -> 12 -- 192-bit key => 12 rounds
         8 -> 14 -- 256-bit key => 14 rounds
-        _ -> undefined
+        n -> error $ "Can't determine number of rounds for key of size " ++ show n
 
 bytesToColumns :: HasCallStack => [Byte] -> [Column]
 bytesToColumns bytes = map wordFromList $ columnMajorMatrix 4 bytes
@@ -44,3 +42,14 @@ showBlock blk
 
 cutToCipherBlocks :: [Byte] -> [[Byte]]
 cutToCipherBlocks = chunksOf (4*nb)
+
+infixl 3 `xorBytes`
+xorBytes :: [Byte] -> [Byte] -> [Byte]
+xorBytes = zipWith add
+
+isLegalKey :: [Byte] -> Bool
+isLegalKey key = case length key of
+    16 -> True -- 128-bit
+    24 -> True -- 196-bit
+    32 -> True -- 256-bit
+    _  -> False
