@@ -340,7 +340,7 @@ cbc_encrypt key input
     | length input == 4*nb =  trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key block !! 1
             where block  = zipWith add prec key
-                  prec = encrypt input
+                  prec = if block == ((chunksOf 4 input ) !! 1 ) then prec = init else prec = encrypt (chunksOf 4 input )
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
     | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key input
