@@ -9,6 +9,7 @@ import Algebra.Ring
 class Ring a => Field a where
     mult_inverse :: a -> a
 
+infixl 7 `diviser`
 -- | Divides two elements using the field's multiplicative
 -- inverse operation
 diviser :: Field a => a -> a -> a

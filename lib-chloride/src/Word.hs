@@ -77,6 +77,7 @@ irrWord :: Word
 --                            1                     x^4
 irrWord = Word $ polynomial [one, zero, zero, zero, one]
 
+infixl 7 `wordMod`
 wordMod :: Word -> Word -> Word
 wordMod (Word a) (Word m) = Word $ a `polyMod` m
 

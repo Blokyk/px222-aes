@@ -18,6 +18,7 @@ showValAndExpected actual expected =
         putStr "        but got:  "
         putStrLn $ bold (show actual)
 
+infix 4 `shouldBe`
 -- | Tests that two values are equal, and prints an error message if not
 --
 -- Unlike 'Control.Exception.assert', this will not crash, but simply

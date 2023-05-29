@@ -5,12 +5,15 @@ module Algebra.Ring (
 
 -- Ring (fr: Anneaux)
 class (Eq a) => Ring a where
+    infixl 6 `add`
     add :: a -> a -> a
     zero :: a
     add_inverse :: a -> a
+    infixl 7 `mult`
     mult :: a -> a -> a
     one :: a
 
+infixl 6 `sub`
 -- | Subtracts two elements using the ring's additive
 -- inverse operation
 sub :: Ring a => a -> a -> a

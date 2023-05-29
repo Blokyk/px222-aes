@@ -73,6 +73,7 @@ padUntilDegree n p
     -- in case this is actually the null/zero-polynomial
     | otherwise     = assert (p /= zero) $ padUntilDegree n (raiseDegree p)
 
+infixl 7 `divEuclide`
 divEuclide :: Field a => Polynomial a -> Polynomial a -> (Polynomial a, Polynomial a)
 divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
     | divisor == zero                  = throw DivideByZero
@@ -89,10 +90,12 @@ divEuclide dividend@(Polynomial a) divisor@(Polynomial b)
                         then 0
                         else min zeroCount (degree dividend - degree divisor)
 
+infixl 7 `polyMod`
 -- | Returns the first polynomial modulo the second
 polyMod :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 polyMod a b = snd $ divEuclide a b
 
+infixl 7 `polyDiv`
 polyDiv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 polyDiv a b = fst $ divEuclide a b
 
@@ -101,6 +104,7 @@ addPolynomial (Polynomial []) q = q
 addPolynomial p (Polynomial []) = p
 addPolynomial (Polynomial a) (Polynomial b) = polynomial (zipWithDefault add zero zero a b)
 
+infix 7 `multScalaire`
 -- | Multiplies a polynomial by a scalar, i.e. a value from the coefficient's field
 multScalaire :: Field a => a -> Polynomial a -> Polynomial a
 multScalaire lambda (Polynomial a)
@@ -123,6 +127,7 @@ multPolynomial (Polynomial (x:xs)) q
         (multScalaire x q) -- a0*q
         (raiseDegree $ multPolynomial (polynomial xs) q) -- X*(a1*q + X*(a2*q + ...))
 
+infixl 7 `modInv`
 modInv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
 modInv b m = a
   where
@@ -150,6 +155,7 @@ trim p = Polynomial $ trim' $ coeffs p
 mapPolynomial :: (Field b) => (a -> b) -> Polynomial a -> Polynomial b
 mapPolynomial f = polynomial . map f . coeffs
 
+infixl 9 `computePolynomialAt`
 computePolynomialAt :: Ring a => Polynomial a -> a -> a
 computePolynomialAt (Polynomial as) x
     = foldl' add zero valueByDegrees
