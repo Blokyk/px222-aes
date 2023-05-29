@@ -156,12 +156,13 @@ Léa:
 ### Implémentation du cipher
 Lors de l'implémentation du Cipher, la monade State qui était utilisée à finalement été abandonée , qui ne serait pas utiles puisque les changements appliqués à chaque tour au bloc et à la clé ne sont pas visibles par l'utilisateur, qui n'a besoin que de la sortie, donc la dernière étape. 
 De plus, lors de cette séance, l'implémentation et la gestion des clés a été réfléchie. Nous n'avons pas besoin de 
-générer un énorme tableau de dix clés avant de commencer le chiffrage. Il est plus simple d ,'utiliser qu'une clé à chaque tour et de la modifier en conséquence. On ne garde qu'une seule clé en mémoire, ainsi.
+générer un énorme tableau de dix clés avant de commencer le chiffrage. Il est plus simple d'utiliser qu'une clé à chaque tour et de la modifier en conséquence. On ne garde qu'une seule clé en mémoire, ainsi.
 >>>>>>> Stashed changes
 
 ## Notes de séance
 
-Une bonne partie de la séance fut dédié à mettre à clair comment le 
+Une bonne partie de la séance fut dédié à mettre au clair comment le bug sur l'inverse pourrait être réglé. Cette séance a aussi permis de réfléchir 
+à l'implémentation du Cipher.
 
 ### Le problème avec l'inverse
 La difficulté rencontrée avec l'inverse n'a pas été simple à surmonter. Un bug en entraînant un autre,
@@ -192,7 +193,7 @@ grâce à l'expérience gagnée lors de l'écriture du cipher.
 
 Une petite note cependant sur `subByte` et `invSubByte`: bien que notre implémentation
 initiale était basée sur la multiplication de byte (comme spécifié dans la spec),
-nous avons vite était informé que, dans l'esprit "mathématique" de cette version,
+nous avons vite été informées que, dans l'esprit "mathématique" de cette version,
 il serait à la place préférable d'utiliser une multiplication de polynôme. N'ayant
 à l'époque pas plus d'indication, nous avons cherché d'autres ressources, jusqu'à
 tomber sur *The Design of Rjindael* (2002), un livre écrit par les auteurs originaux
