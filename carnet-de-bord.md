@@ -149,6 +149,7 @@ Léa:
 
 ## Rétrospective
 
+<<<<<<< Updated upstream
 ### Implémentation du cipher
 
 Pour implémenter le cipher, nous avions initialement pensé à utilisé la monade `State`,
@@ -165,6 +166,14 @@ De plus, lors de cette séance, l'implémentation et la gestion des clés a ét�
 Nous n'avons pas besoin de générer un énorme tableau de dix clés avant de commencer le
 chiffrage. Il est plus simple d'utiliser qu'une clé à chaque tour et de la modifier en
 conséquence. On ne garde ainsi qu'une seule clé en mémoire à la fois.
+=======
+- monade State + pourquoi ne pas l'utiliser
+- comment on gère les clés
+### Implémentation du cipher
+Lors de l'implémentation du Cipher, la monade State qui était utilisée à finalement été abandonée , qui ne serait pas utiles puisque les changements appliqués à chaque tour au bloc et à la clé ne sont pas visibles par l'utilisateur, qui n'a besoin que de la sortie, donc la dernière étape. 
+De plus, lors de cette séance, l'implémentation et la gestion des clés a été réfléchie. Nous n'avons pas besoin de 
+générer un énorme tableau de dix clés avant de commencer le chiffrage. Il est plus simple d'utiliser qu'une clé à chaque tour et de la modifier en conséquence. On ne garde qu'une seule clé en mémoire, ainsi.
+>>>>>>> Stashed changes
 
 ## Notes de séance
 
