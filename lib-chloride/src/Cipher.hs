@@ -12,6 +12,7 @@ import GHC.Stack
 import Debug.Trace
 
 import Utils
+    ( columnMajorMatrix, rowMajorMatrix, sequenceF, withIndex , chunksOf)
 
 import Algebra
 import Byte
@@ -320,10 +321,8 @@ nextKey (KeyData key iteration) =
 
 ecb_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 ecb_encrypt key input
-    | length input == 4*nb = trace ("Encrypting:\n" ++ showByteBlock block ++ "\nwith key:\n" ++ showByteBlock key) $
-        cipher key block !! 1
-             where 
-                block = chunksOf 4 input 
+    | length input /= 4*nb = trace ("Encrypting:\n" ++ showByteBlock (block!!1) ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key (block !! 1)
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
     | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key input
@@ -333,11 +332,12 @@ ecb_encrypt key input
             24 -> True -- 196-bit
             32 -> True -- 256-bit
             _  -> False
+        block = chunksOf input 4
 
-
+{- 
 cbc_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 cbc_encrypt key input
-    | length input == 4*nb =  trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+    | length input /= 4*nb =  trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key block !! 1
             where block  = zipWith add prec key
                   prec = if block == ((chunksOf 4 input ) !! 1 ) then prec = init else prec = encrypt (chunksOf 4 input )
@@ -350,3 +350,6 @@ cbc_encrypt key input
             24 -> True -- 196-bit
             32 -> True -- 256-bit
             _  -> False
+        block  = zipWith add prec key
+        prec = if block == ((chunksOf 4 input ) !! 1 ) then prec = init else prec = encrypt (chunksOf 4 input )
+ -}

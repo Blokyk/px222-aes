@@ -8,12 +8,12 @@ module Utils (
     , Utils.showHex
     , rowMajorMatrix
     , columnMajorMatrix
+    , chunksOf
 ) where
 
 import Numeric (showHex)
 import Data.List (mapAccumL, partition, foldl')
 import Data.Tuple (swap)
-import Cipher (nb)
 
 -- Same as zipWith, but instead of stopping when either of the
 -- lists are empty, it will use the corresponding default value
@@ -56,7 +56,7 @@ columnMajorMatrix n l  = row : columnMajorMatrix n rest
     where (row, rest) = splitAt n l
 
 chunksOf :: [a] -> Int -> [[a]]
-chunksOf [] _ = [[[]]]
+chunksOf [] _ = [[]]
 chunksOf list 0 = [list]
 chunksOf x n = chunk :chunksOf rest n
              where (chunk,rest) = splitAt n x 

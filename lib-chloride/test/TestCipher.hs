@@ -12,7 +12,7 @@ testCipher =
         testSubBytes,   testInvSubBytes,
         testShiftRows,  testInvShiftRows,
         testMixColumns, testInvMixColumns,
-        testAddRoundKey
+        testAddRoundKey, testEcb
     ]
 
 testSubBytes :: HasCallStack => IO Bool
@@ -94,6 +94,15 @@ testAddRoundKey
             map wordFromInt [0xe0927fe8, 0xc86363c0, 0xd9b13550, 0x85b8be01]
         )
     ]
+
+testEcb:: HasCallStack => IO Bool
+testEcb
+    = newTest "ECB" [
+           ( ecb_encrypt (concatMap (byteFromInt)[0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f] ) [(concatMap (byteFromInt)[0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]), (concatMap (byteFromInt)[0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]),(concatMap (byteFromInt)[0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]),(concatMap (byteFromInt)[0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff])],
+            [0,0]
+        )
+    ]
+
 
 sbox :: [Byte]
 sbox = map byteFromInt
