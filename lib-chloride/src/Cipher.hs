@@ -184,13 +184,12 @@ invSubBytes :: HasCallStack => Block -> Block
 invSubBytes = map invSubWord
 
 invSubByte :: HasCallStack => Byte -> Byte
--- to be completely "pure," we should use a polynomial P1(X) that's the reciprocal
--- of the P(X) used in SubByte(); however, P1(X) has *a lot* of coefficients (256 to
--- be exact, just compose X^254 and p_f1, and then reduce cyclic/useless powers of X),
--- which makes both typing it cumbersome and applying it very slow.
+-- to be completely "pure," we should use a polynomial S(X) that's the reciprocal
+-- of the P(X) used in SubByte(); however, S(X) has *a lot* of coefficients (256 to
+-- be exact), which makes both typing it cumbersome and applying it very slow.
 -- Instead, we only use a polynomial for the affine transform (p.37 of "The Design
 -- of Rjindael" (2002)), and then invert the resulting byte; this is a lot faster
--- and involves a lot less coefficients than applying P1(X) directly.
+-- and involves a lot less coefficients than applying S(X) directly.
 invSubByte b = mult_inverse (applyPolynomial mult p_f1 b `byteMod` irreducibleByte)
     where
         -- found by doing lagrange interpolation on the table for f^-1
