@@ -1,3 +1,5 @@
+{-# HLINT ignore "Use :" #-}
+{-# HLINT ignore "Use drop" #-}
 module Utils (
       zipWithDefault
     , withIndex
@@ -51,3 +53,8 @@ columnMajorMatrix :: Int -> [a] -> [[a]]
 columnMajorMatrix _ [] = []
 columnMajorMatrix n l  = row : columnMajorMatrix n rest
     where (row, rest) = splitAt n l
+
+chunksOf :: [a] -> Int -> [[a]]
+chunksOf [] _ = [[[]]]
+chunksOf list 0 = [list]
+chunksOf x n = [take n x] ++ chunksOf (snd $ splitAt n x ) n

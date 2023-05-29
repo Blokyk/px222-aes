@@ -317,17 +317,13 @@ nextKey (KeyData key iteration) =
                 c' 4 | nk == 8 = subWord prevCol
                 c' _ = prevCol
 
-chunksOf :: [Byte] -> Int -> [[Byte]]
-chunksOf [] _ = [[bcdByte 0]]
-chunksOf list 0 = [list]
-chunksOf x n = [take n x] ++ chunksOf (snd$ splitAt n x ) n
 
 ecb_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 ecb_encrypt key input
-    {- | length input /= 4*nb = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+    | length input == 4*nb = trace ("Encrypting:\n" ++ showByteBlock block ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key block !! 1
              where 
-                block = chunksOf 4 input  -}
+                block = chunksOf 4 input 
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
     | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
         cipher key input
@@ -338,3 +334,19 @@ ecb_encrypt key input
             32 -> True -- 256-bit
             _  -> False
 
+
+cbc_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+cbc_encrypt key input
+    | length input == 4*nb =  trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key block !! 1
+            where block  = zipWith add prec key
+                  prec = encrypt input
+    | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
+    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+        cipher key input
+    where
+        isLegalKey key = case length key of
+            16 -> True -- 128-bit
+            24 -> True -- 196-bit
+            32 -> True -- 256-bit
+            _  -> False
