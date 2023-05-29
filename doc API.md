@@ -29,8 +29,9 @@ Le Cipher prend en entrée deux tableau de Byte, la clé et le bloc.
 Un Byte est un type qui correspondn à un Polynome de Bits, qu'on peut représenter ainsi `Byte $ Polynomial Bit`.
 Le Cipher encode à la fois le bloc et la clé.
 Dans un premier temps, le Cipher modifie le bloc à l'aide de fonctions comme  SubBytes, ShiftRows, MixColumn et  Round Key . Les trois premières fonctions modifient le bloc sans utiliser la clé, et c'est la quatrième ( AddRoundKey) qui utilise la clé. Ensuite le bloc trouvé devient le nouveau bloc à coder et ainsi de suite, dix fois donc.
-De son côté, la clé initiale n'est utilisée qu'une fois puisqu'elle est après elle même encryptée : on utilise la fonction nextKey pour créer la clé suivante. Elle se base 
-
+De son côté, la clé initiale n'est utilisée qu'une fois puisqu'elle est après elle même encryptée : on utilise la fonction nextKey pour créer la clé suivante. 
+Au contraire de ce que recommande la spec ( initialiser avant une encryption un tableau de dix clés), le choix qui a été fait a été celui de générer des clefs à la demande, ce qui a seulement nécessité d'associer un numéro à chaque clé.
+Ce choix technique permettait une meilleure lisbilité du code
 ## Autres types de chiffrement
 
 Il est possible de chiffrer un bloc avec une méthode dite *Electronic Codebook* (ECB), qui permet de chiffrer plus de 16 bytes à la fois. Pour cela il suffit de remplacer l'appel à `encrypt` par `encryptECB`.
