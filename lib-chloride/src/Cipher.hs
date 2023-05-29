@@ -1,60 +1,33 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
-{-# HLINT ignore "Use camelCase" #-}
-{-# HLINT ignore "Use :" #-}
-{-# HLINT ignore "Use drop" #-}
-module Cipher where
+module Cipher(
+      encrypt
+    , decrypt
+    , encryptECB
+    , encryptCBC
+    , intsAsCipherData
+) where
 
 import Prelude hiding (Word)
-import Data.List (mapAccumL, transpose, intercalate)
+import Data.List (mapAccumL)
 import GHC.Stack
-import Debug.Trace
 
 import Utils
-    ( columnMajorMatrix, rowMajorMatrix, sequenceF, withIndex , chunksOf)
+import CipherUtils
 
 import Algebra
 import Byte
 import Word
 
-type Column = Word
-type Key = [Word]
-data KeyData = KeyData { getKey :: Key, keyIteration :: Int } -- "why do we need this?" -> see the code for key expansion at the bottom of the file
-type Block = [Column]
-
-nb :: Int
-nb = 4
-
--- return the number of times the key will be encrypted, depending on its length
-nr :: KeyData -> Int
-nr key = case length (getKey key) of
-        4 -> 10 -- 128-bit key => 10 rounds
-        6 -> 12 -- 192-bit key => 12 rounds
-        8 -> 14 -- 256-bit key => 14 rounds
-        _ -> undefined
-
-bytesToColumns :: HasCallStack => [Byte] -> [Column]
-bytesToColumns bytes = map wordFromList $ columnMajorMatrix 4 bytes
-
-bytesToRows :: HasCallStack => [Byte] -> [Word]
-bytesToRows bytes = map wordFromList $ rowMajorMatrix 4 bytes
-
-transposeBlock :: HasCallStack => Block -> Block
-transposeBlock = map wordFromList . transpose . map asBytes
-
-showByteBlock :: [Byte] -> String
-showByteBlock = showBlock . bytesToColumns
-
-showBlock :: Block -> String
-showBlock blk
-    = "    |" ++ intercalate "|\n    |" (map show $ transposeBlock blk) ++ "|"
+intsAsCipherData :: [Int] -> [Byte]
+intsAsCipherData = map byteFromInt
 
 encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 encrypt key input
     | length input /= 4*nb = error $ "The input must have a size of 16 bytes (got " ++ show (length input) ++ " bytes instead)"
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
-    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+    | otherwise =
         cipher key input
     where
         isLegalKey key = case length key of
@@ -63,11 +36,23 @@ encrypt key input
             32 -> True -- 256-bit
             _  -> False
 
+encryptECB :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+encryptECB key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concatMap (encrypt key) $ cutToCipherBlocks input
+
+encryptCBC :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+encryptCBC key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concat $ foldl (\acc blk -> acc ++ [encrypt (last acc) blk]) [key] $ cutToCipherBlocks input
+
 decrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 decrypt key input
     | length input /= 4*nb = error $ "The input must have a size of 16 bytes (got " ++ show (length input) ++ " bytes instead)"
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
-    | otherwise = trace ("Decrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
+    | otherwise =
         decipher key input
     where
         isLegalKey key = case length key of
@@ -274,10 +259,8 @@ rcons i = wordFromList [iterate xtime one !! i, bcdByte 0, bcdByte 0, bcdByte 0]
 --        completely useless)
 
 nextKey :: HasCallStack => KeyData -> KeyData
-nextKey (KeyData key iteration) =
-    trace ("Generating key #" ++ show (iteration+1) ++ "... " ++ show (getKey res) ++ "\n") res
+nextKey (KeyData key iteration) = KeyData newKey (iteration+1)
     where
-        res = KeyData newKey (iteration+1)
         nk  = length key
         w i = key !! i
 
@@ -316,39 +299,3 @@ nextKey (KeyData key iteration) =
                 -- if (Nk = 8) and (i = 4), then we apply SubWord on the previous column first
                 c' 4 | nk == 8 = subWord prevCol
                 c' _ = prevCol
-
-
-ecb_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
-ecb_encrypt key input
-    | length input /= 4*nb = trace ("Encrypting:\n" ++ showByteBlock (block!!1) ++ "\nwith key:\n" ++ showByteBlock key) $
-        cipher key (block !! 1)
-    | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
-    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
-        cipher key input
-    where
-        isLegalKey key = case length key of
-            16 -> True -- 128-bit
-            24 -> True -- 196-bit
-            32 -> True -- 256-bit
-            _  -> False
-        block = chunksOf input 4
-
-{- 
-cbc_encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
-cbc_encrypt key input
-    | length input /= 4*nb =  trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
-        cipher key block !! 1
-            where block  = zipWith add prec key
-                  prec = if block == ((chunksOf 4 input ) !! 1 ) then prec = init else prec = encrypt (chunksOf 4 input )
-    | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
-    | otherwise = trace ("Encrypting:\n" ++ showByteBlock input ++ "\nwith key:\n" ++ showByteBlock key) $
-        cipher key input
-    where
-        isLegalKey key = case length key of
-            16 -> True -- 128-bit
-            24 -> True -- 196-bit
-            32 -> True -- 256-bit
-            _  -> False
-        block  = zipWith add prec key
-        prec = if block == ((chunksOf 4 input ) !! 1 ) then prec = init else prec = encrypt (chunksOf 4 input )
- -}
