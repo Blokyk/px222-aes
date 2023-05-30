@@ -78,6 +78,11 @@ subWord = wordFromList . map subByte . asBytes
 subBytes :: HasCallStack => Block -> Block
 subBytes = map subWord
 
+-- L'implémentation "pure" est au final beaucoup trop lente
+-- pour être utilisée en pratique; elle est donc remplacée par
+-- sa version plus "pragmatique," mais voilà son implémentation
+-- originale pour postérité:
+--
 -- subByte :: Byte -> Byte
 -- subByte b = applyPolynomial mult p b `byteMod` irreducibleByte
 --     where
@@ -124,7 +129,7 @@ invSubByte :: HasCallStack => Byte -> Byte
 -- Instead, we only use a polynomial for the affine transform (p.37 of "The Design
 -- of Rjindael" (2002)), and then invert the resulting byte; this is a lot faster
 -- and involves a lot less coefficients than applying S(X) directly.
-invSubByte b = mult_inverse (applyPolynomial mult p_f1 b `byteMod` irreducibleByte)
+invSubByte b = mult_inverse ((p_f1 `valueAt` b) `byteMod` irreducibleByte)
     where
         -- found by doing lagrange interpolation on the table for f^-1
         -- given in Appendix C of "The Design of Rjindael" (2002)

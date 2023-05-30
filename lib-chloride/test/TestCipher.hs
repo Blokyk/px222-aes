@@ -31,16 +31,16 @@ testEncrypt
         )
     ]
     where
-        block = concatMap (asBytes . wordFromInt) [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]
+        block = wordsAsCipherData $ map wordFromInt [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]
 
-        key128 = concatMap (asBytes . wordFromInt) [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f]
-        result128 = concatMap (asBytes . wordFromInt) [0x69c4e0d8, 0x6a7b0430, 0xd8cdb780, 0x70b4c55a]
+        key128 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f]
+        result128 = wordsAsCipherData $ map wordFromInt [0x69c4e0d8, 0x6a7b0430, 0xd8cdb780, 0x70b4c55a]
 
-        key192 = concatMap (asBytes . wordFromInt) [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
-        result192 = concatMap (asBytes . wordFromInt) [0xdda97ca4, 0x864cdfe0, 0x6eaf70a0, 0xec0d7191]
+        key192 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
+        result192 = wordsAsCipherData $ map wordFromInt [0xdda97ca4, 0x864cdfe0, 0x6eaf70a0, 0xec0d7191]
 
-        key256 = concatMap (asBytes . wordFromInt) [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
-        result256 = concatMap (asBytes . wordFromInt) [0x8ea2b7ca, 0x516745bf, 0xeafc4990, 0x4b496089]
+        key256 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
+        result256 = wordsAsCipherData $ map wordFromInt [0x8ea2b7ca, 0x516745bf, 0xeafc4990, 0x4b496089]
 
 testDecrypt :: HasCallStack => IO Bool
 testDecrypt
@@ -57,10 +57,10 @@ testDecrypt
         )
     ]
     where
-        block = concatMap (asBytes . wordFromInt) [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734]
-        key128 = concatMap (asBytes . wordFromInt) [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]
-        key192 = concatMap (asBytes . wordFromInt) [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
-        key256 = concatMap (asBytes . wordFromInt) [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
+        block = wordsAsCipherData $ map wordFromInt [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734]
+        key128 = wordsAsCipherData $ map wordFromInt [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]
+        key192 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
+        key256 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
 
 testEncryptECB :: HasCallStack => IO Bool
 testEncryptECB

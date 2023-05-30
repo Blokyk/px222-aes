@@ -9,18 +9,23 @@ module Cipher(
     , decryptECB
     , decryptCBC
     , intsAsCipherData
+    , wordsAsCipherData
 ) where
 
 import Prelude hiding (Word)
 import GHC.Stack
 
 import Byte
+import Word
 
 import Cipher.Internal
 import Cipher.Internal.Utils
 
 intsAsCipherData :: [Int] -> [Byte]
 intsAsCipherData = map byteFromInt
+
+wordsAsCipherData :: [Word] -> [Byte]
+wordsAsCipherData = concatMap asBytes
 
 encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 encrypt key input
