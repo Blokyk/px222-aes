@@ -3,98 +3,114 @@ module TestCipher(testCipher) where
 import Runner
 
 import Byte
-import Cipher
 import Word
+
+import Cipher
+import Cipher.Internal.Utils
 
 testCipher :: HasCallStack => IO ()
 testCipher =
     runTests "Cipher" [
+<<<<<<< HEAD
         testSubBytes,   testInvSubBytes,
         testShiftRows,  testInvShiftRows,
         testMixColumns, testInvMixColumns,
         testAddRoundKey, testECB, testCBC
+=======
+        testEncrypt, testDecrypt,
+        testEncryptECB, testDecryptECB,
+        testEncryptCBC, testDecryptCBC
+>>>>>>> e3c5f2058a78a356984dc18b03128402aa6ced44
     ]
 
-testSubBytes :: HasCallStack => IO Bool
-testSubBytes = newTest "SubByte" $
-    zip (map (subByte . byteFromInt) [0x0..0xff]) sbox
-
-testInvSubBytes :: HasCallStack => IO Bool
-testInvSubBytes = newTest "InvSubByte" $
-    zip (map (invSubByte . byteFromInt) [0x0..0xff]) invSBox
-
-testShiftRows :: HasCallStack => IO Bool
-testShiftRows
-    = newTest "ShiftRows" [
+testEncrypt :: HasCallStack => IO Bool
+testEncrypt
+    = newTest "Encryption: Classic" [
            (
-            shiftRows $ map wordFromInt [0xd42711ae, 0xe0bf98f1, 0xb8b45de5, 0x1e415230],
-                        map wordFromInt [0xd4bf5d30, 0xe0b452ae, 0xb84111f1, 0x1e2798e5]
+            encrypt key128 block,
+            result128
         ), (
-            shiftRows $ map wordFromInt [0x49ded289, 0x45db96f1, 0x7f39871a, 0x7702533b],
-                        map wordFromInt [0x49db873b, 0x45395389, 0x7f02d2f1, 0x77de961a]
+            encrypt key192 block,
+            result192
+        ), (
+            encrypt key256 block,
+            result256
         )
     ]
+    where
+        block = wordsAsCipherData $ map wordFromInt [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff]
 
-testInvShiftRows :: HasCallStack => IO Bool
-testInvShiftRows
-    = newTest "InvShiftRows" [
-           (
-            invShiftRows $ map wordFromInt [0x01020304, 0x05060708, 0x090a0b0c, 0x0d0e0f00],
-                           map wordFromInt [0x010e0b08, 0x05020f0c, 0x09060300, 0x0d0a0704]
+        key128 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f]
+        result128 = wordsAsCipherData $ map wordFromInt [0x69c4e0d8, 0x6a7b0430, 0xd8cdb780, 0x70b4c55a]
+
+        key192 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
+        result192 = wordsAsCipherData $ map wordFromInt [0xdda97ca4, 0x864cdfe0, 0x6eaf70a0, 0xec0d7191]
+
+        key256 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
+        result256 = wordsAsCipherData $ map wordFromInt [0x8ea2b7ca, 0x516745bf, 0xeafc4990, 0x4b496089]
+
+testDecrypt :: HasCallStack => IO Bool
+testDecrypt
+    = newTest "Decryption: Classic" [
+        (
+            decrypt key128 (encrypt key128 block),
+            block
         ), (
-            invShiftRows $ map wordFromInt [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff],
-                           map wordFromInt [0x00ddaa77, 0x4411eebb, 0x885522ff, 0xcc996633]
+            decrypt key192 (encrypt key192 block),
+            block
+        ), (
+            decrypt key256 (encrypt key256 block),
+            block
         )
     ]
+    where
+        block = wordsAsCipherData $ map wordFromInt [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734]
+        key128 = wordsAsCipherData $ map wordFromInt [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]
+        key192 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617]
+        key256 = wordsAsCipherData $ map wordFromInt [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f]
 
-testMixColumns :: HasCallStack => IO Bool
-testMixColumns
-    = newTest "MixColumns" [
+testEncryptECB :: HasCallStack => IO Bool
+testEncryptECB
+    = newTest "Encryption: ECB" [
            (
-            mixColumns $ map wordFromInt [0xd4bf5d30, 0xe0b452ae, 0xb84111f1, 0x1e2798e5],
-            map wordFromInt [0x046681e5, 0xe0cb199a, 0x48f8d37a, 0x2806264c]
-        ), (
-            mixColumns $ map wordFromInt [0x49db873b, 0x45395389, 0x7f02d2f1, 0x77de961a],
-            map wordFromInt [0x584dcaf1, 0x1b4b5aac, 0xdbe7caa8, 0x1b6bb0e5]
+            encryptECB key (block1 ++ block2),
+            encrypt key block1 ++ encrypt key block2
         )
     ]
+    where
+        key = map byteFromInt [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        block1 = map byteFromInt [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
+        block2 = map byteFromInt [0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b, 0x3c, 0x2d, 0x1e, 0x0f]
 
-testInvMixColumns :: HasCallStack => IO Bool
-testInvMixColumns
-    = newTest "InvMixColumns" [
+testDecryptECB :: HasCallStack => IO Bool
+testDecryptECB
+    = newTest "Decryption: ECB" [
            (
-            invMixColumns $ map wordFromInt [0xe9f74eec, 0x023020f6, 0x1bf2ccf2, 0x353c21c7],
-                            map wordFromInt [0x54d990a1, 0x6ba09ab5, 0x96bbf40e, 0xa111702f]
-        ),  (
-            invMixColumns $ map wordFromInt [0xbaa03de7, 0xa1f9b56e, 0xd5512cba, 0x5f414d23],
-                            map wordFromInt [0x3e1c22c0, 0xb6fcbf76, 0x8da85067, 0xf6170495]
-        ), (
-            invMixColumns $ map wordFromInt [0xc57e1c15, 0x9a9bd286, 0xf05f4be0, 0x98c63439],
-                            map wordFromInt [0xb458124c, 0x68b68a01, 0x4b99f82e, 0x5f15554c]
-        ), (
-            invMixColumns $ map wordFromInt [0x9816ee74, 0x00f87f55, 0x6b2c049c, 0x8e5ad036],
-                            map wordFromInt [0xe8dab690, 0x1477d465, 0x3ff7f5e2, 0xe747dd4f]
-        ), (
-            invMixColumns $ map wordFromInt [0xf4bcd454, 0x32e554d0, 0x75f1d6c5, 0x1dd03b3c],
-                            map wordFromInt [0x36339d50, 0xf9b53926, 0x9f2c092d, 0xc4406d23]
-        ), (
-            invMixColumns $ map wordFromInt [0x5f726415, 0x57f5bc92, 0xf7be3b29, 0x1db9f91a],
-                            map wordFromInt [0x6353e08c, 0x0960e104, 0xcd70b751, 0xbacad0e7]
+            decryptECB key (encryptECB key (block1 ++ block2)),
+            block1 ++ block2
         )
     ]
+    where
+        key = map byteFromInt [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        block1 = map byteFromInt [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
+        block2 = map byteFromInt [0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b, 0x3c, 0x2d, 0x1e, 0x0f]
 
-testAddRoundKey :: HasCallStack => IO Bool
-testAddRoundKey
-    = newTest "AddRoundKey" [
+testEncryptCBC :: HasCallStack => IO Bool
+testEncryptCBC
+    = newTest "Encryption: CBC" [
            (
-            addRoundKey (KeyData (map wordFromInt [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c]) 0) (map wordFromInt [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734]),
-            map wordFromInt [0x193de3be, 0xa0f4e22b, 0x9ac68d2a, 0xe9f84808]
-        ), (
-            addRoundKey (KeyData (map wordFromInt [0xef44a541, 0xa8525b7f, 0xb671253b, 0xdb0bad00]) 0) (map wordFromInt [0x0fd6daa9, 0x603138bf, 0x6fc0106b, 0x5eb31301]),
-            map wordFromInt [0xe0927fe8, 0xc86363c0, 0xd9b13550, 0x85b8be01]
+            encryptCBC key (block1 ++ block2),
+            let
+                e1 = encrypt key (key `xorBytes` block1)
+                in e1 ++ encrypt key (e1 `xorBytes` block2)
         )
     ]
+    where
+        key = map byteFromInt [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        block1 = map byteFromInt [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
+        block2 = map byteFromInt [0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b, 0x3c, 0x2d, 0x1e, 0x0f]
 
+<<<<<<< HEAD
 testECB :: HasCallStack => IO Bool
 testECB
     = newTest "Encryption: ECB" [
@@ -173,3 +189,17 @@ invSBox = map byteFromInt
         0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
         0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
     ]
+=======
+testDecryptCBC :: HasCallStack => IO Bool
+testDecryptCBC
+    = newTest "Decryption: CBC" [
+           (
+            decryptCBC key (encryptCBC key (block1 ++ block2)),
+            block1 ++ block2
+        )
+    ]
+    where
+        key = map byteFromInt [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+        block1 = map byteFromInt [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
+        block2 = map byteFromInt [0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b, 0x3c, 0x2d, 0x1e, 0x0f]
+>>>>>>> e3c5f2058a78a356984dc18b03128402aa6ced44

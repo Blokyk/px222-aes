@@ -3,6 +3,7 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 module Cipher(
       encrypt
+<<<<<<< HEAD
     , decrypt
     , encryptECB
     , encryptCBC
@@ -22,6 +23,31 @@ import Word
 
 intsAsCipherData :: [Int] -> [Byte]
 intsAsCipherData = map byteFromInt
+=======
+    , encryptECB
+    , encryptCBC
+    , decrypt
+    , decryptECB
+    , decryptCBC
+    , intsAsCipherData
+    , wordsAsCipherData
+) where
+
+import Prelude hiding (Word)
+import GHC.Stack
+
+import Byte
+import Word
+
+import Cipher.Internal
+import Cipher.Internal.Utils
+
+intsAsCipherData :: [Int] -> [Byte]
+intsAsCipherData = map byteFromInt
+
+wordsAsCipherData :: [Word] -> [Byte]
+wordsAsCipherData = concatMap asBytes
+>>>>>>> e3c5f2058a78a356984dc18b03128402aa6ced44
 
 encrypt :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 encrypt key input
@@ -29,12 +55,23 @@ encrypt key input
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
     | otherwise =
         cipher key input
+
+encryptECB :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+encryptECB key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concatMap (encrypt key) $ cutToCipherBlocks input
+
+encryptCBC :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+encryptCBC key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concat $ drop 1 $ foldl f [iv] $ cutToCipherBlocks input
     where
-        isLegalKey key = case length key of
-            16 -> True -- 128-bit
-            24 -> True -- 196-bit
-            32 -> True -- 256-bit
-            _  -> False
+        iv = key
+        f :: [[Byte]] -> [Byte] -> [[Byte]]
+        f acc blk = acc ++ [encrypt key (prevOutput `xorBytes` blk)]
+            where prevOutput = last acc
 
 encryptECB :: HasCallStack => [Byte] -> [Byte] -> [Byte]
 encryptECB key input
@@ -54,149 +91,8 @@ decrypt key input
     | not $ isLegalKey key = error $ "The key must have a size of 16, 24 or 32 bytes (got " ++ show (length key) ++ " bytes instead)"
     | otherwise =
         decipher key input
-    where
-        isLegalKey key = case length key of
-            16 -> True -- 128-bit
-            24 -> True -- 196-bit
-            32 -> True -- 256-bit
-            _  -> False
 
-cipher :: HasCallStack => [Byte] -> [Byte] -> [Byte]
-cipher key input =
-    concatMap asBytes $ cipherFunc key' (bytesToColumns input)
-    where
-        key' = KeyData (bytesToColumns key) 0
-
-decipher :: HasCallStack => [Byte] -> [Byte] -> [Byte]
-decipher key input =
-    concatMap asBytes $ invCipherFunc key' (bytesToColumns input)
-    where
-        key' = KeyData (bytesToColumns key) 0
-
-cipherFunc :: HasCallStack => KeyData -> Block -> Block
-cipherFunc key =
-        sequenceF [addRoundKey key, cipherLoop 1 $ nextKey key]
-    where
-        cipherLoop :: HasCallStack => Int -> KeyData -> Block -> Block
-        cipherLoop i key
-            -- in case it's the last round, we don't want to call MixColumns nor do
-            -- any recursive stuff; instead of doing an if/else inside the list, we
-            -- just split the cases here for simplicity
-            | i == nr key = sequenceF [
-                subBytes,
-                shiftRows,
-                addRoundKey key
-            ]
-            | otherwise = sequenceF [
-                subBytes,
-                shiftRows,
-                mixColumns,
-                addRoundKey key,
-                cipherLoop (i+1) (nextKey key)
-            ]
-
-invCipherFunc :: HasCallStack => KeyData -> Block -> Block
-invCipherFunc key =
-        sequenceF [addRoundKey (head keys), cipherLoop 1 (keys !! 1)]
-    where
-        -- the way we handle keys is kinda catching backup to us here but... whatever, perf
-        -- isn't important here so who cares
-        -- reverse forces the whole list into WHNF, so we'll only compute the iterations once
-        keys :: [KeyData]
-        keys = reverse (take (nr key + 1) $ iterate nextKey key)
-        cipherLoop :: HasCallStack => Int -> KeyData -> Block -> Block
-        cipherLoop i key
-            -- in case it's the last round, we don't want to call MixColumns nor do
-            -- any recursive stuff; instead of doing an if/else inside the list, we
-            -- just split the cases here for simplicity
-            | i == nr key = sequenceF [
-                invShiftRows,
-                invSubBytes,
-                addRoundKey key
-            ]
-            | otherwise = sequenceF [
-                invShiftRows,
-                invSubBytes,
-                addRoundKey key,
-                invMixColumns,
-                cipherLoop (i+1) (keys !! (i+1))
-            ]
-
--- §5.1.1 / SubBytes
-
-subWord :: HasCallStack => Column -> Column
-subWord word = wordFromList $ map subByte $ asBytes word
-subBytes :: HasCallStack => Block -> Block
-subBytes = map subWord
-
-subByte :: Byte -> Byte
-subByte b = applyPolynomial mult p b `byteMod` irreducibleByte
-    where
-        -- from "The Design of Rjindael (2002), Appendix C p.212"
-        -- This is the lagrange polynomial for the affine transform
-        -- (matrix + constant), and since we're operating over a finite
-        -- field, "interpolating" over every element is finding an exact
-        -- expression of the value
-        p = polynomial (
-                                       byteFromInt 0x63 :   -- degree 0
-                replicate 126 zero ++ [byteFromInt 0x8f] ++ -- degree 127
-                replicate 63 zero ++  [byteFromInt 0xb5] ++ -- degree 191
-                replicate 31 zero ++  [byteFromInt 0x01] ++ -- degree 223
-                replicate 15 zero ++  [byteFromInt 0xf4] ++ -- degree 239
-                replicate 7 zero ++   [byteFromInt 0x25] ++ -- degree 247
-                replicate 3 zero ++   [byteFromInt 0xf9] ++ -- degree 251
-                replicate 1 zero ++   [byteFromInt 0x09] ++ -- degree 253
-                                      [byteFromInt 0x05]    -- degree 254
-            )
-
--- subByte :: HasCallStack => Byte -> Byte
--- subByte b = byte (reverse $ map subBit $ withIndex bits) `add` c
---     where
---         -- b(i) + b(i + 4 % 8) + b(i + 5 % 8) + b(i + 6 % 8) + b(i + 7 % 8) + c(i)
---         subBit (bi, i) = foldr add zero
---             [ bi
---             , bits !! ((i + 4) `mod` 8)
---             , bits !! ((i + 5) `mod` 8)
---             , bits !! ((i + 6) `mod` 8)
---             , bits !! ((i + 7) `mod` 8)
---             ]
---         c = bcdByte 01100011
---         bits = reverse $ asBits $ mult_inverse b
-
-invSubWord :: HasCallStack => Column -> Column
-invSubWord word = wordFromList $ map invSubByte $ asBytes word
-invSubBytes :: HasCallStack => Block -> Block
-invSubBytes = map invSubWord
-
-invSubByte :: HasCallStack => Byte -> Byte
--- to be completely "pure," we should use a polynomial S(X) that's the reciprocal
--- of the P(X) used in SubByte(); however, S(X) has *a lot* of coefficients (256 to
--- be exact), which makes both typing it cumbersome and applying it very slow.
--- Instead, we only use a polynomial for the affine transform (p.37 of "The Design
--- of Rjindael" (2002)), and then invert the resulting byte; this is a lot faster
--- and involves a lot less coefficients than applying S(X) directly.
-invSubByte b = mult_inverse (applyPolynomial mult p_f1 b `byteMod` irreducibleByte)
-    where
-        -- found by doing lagrange interpolation on the table for f^-1
-        -- given in Appendix C of "The Design of Rjindael" (2002)
-        p_f1 = polynomial (
-                                     [byteFromInt 0x05,    -- degree 0
-                                      byteFromInt 0x05,    -- degree 1
-                                      byteFromInt 0xfe] ++ -- degree 2
-                replicate 1 zero ++  [byteFromInt 0x7f] ++ -- degree 4
-                replicate 3 zero ++  [byteFromInt 0x5a] ++ -- degree 8
-                replicate 7 zero ++  [byteFromInt 0x78] ++ -- degree 16
-                replicate 15 zero ++ [byteFromInt 0x59] ++ -- degree 32
-                replicate 31 zero ++ [byteFromInt 0xdb] ++ -- degree 64
-                replicate 63 zero ++ [byteFromInt 0x6e]    -- degree 128
-            )
-
--- §5.1.2 / ShiftRows
-
-rotWordLeft :: HasCallStack => Word -> Word
-rotWordLeft w = word hl lh ll hh
-    where (hh, hl, lh, ll) = asByteTuple w
-
+<<<<<<< HEAD
 rotWordRight :: HasCallStack => Word -> Word
 rotWordRight w = word ll hh hl lh
     where (hh, hl, lh, ll) = asByteTuple w
@@ -299,3 +195,22 @@ nextKey (KeyData key iteration) = KeyData newKey (iteration+1)
                 -- if (Nk = 8) and (i = 4), then we apply SubWord on the previous column first
                 c' 4 | nk == 8 = subWord prevCol
                 c' _ = prevCol
+=======
+decryptECB :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+decryptECB key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concatMap (decrypt key) $ cutToCipherBlocks input
+
+decryptCBC :: HasCallStack => [Byte] -> [Byte] -> [Byte]
+decryptCBC key input
+    | length input `mod` (4*nb) /= 0 = error $ "The input must have a size that is a multiple of 16 bytes (got " ++ show (length input) ++ "bytes instead, i.e. " ++ show (length input `mod` (4*nb)) ++ " too many.)"
+    | otherwise =
+        concatMap snd $ drop 1 $ foldl f [(iv, [])] $ cutToCipherBlocks input
+    where
+        iv = key
+        f :: [([Byte], [Byte])] -> [Byte] -> [([Byte], [Byte])]
+        f acc currBlock
+            = acc ++ [(currBlock, prevInput `xorBytes` decrypt key currBlock)]
+            where (prevInput, _) = last acc
+>>>>>>> e3c5f2058a78a356984dc18b03128402aa6ced44

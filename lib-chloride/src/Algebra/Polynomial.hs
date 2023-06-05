@@ -4,16 +4,15 @@ module Algebra.Polynomial (
       Polynomial()
     , coeffs
     , polynomial
-    , mapPolynomial
     , degree
     , divEuclide
     , polyMod
     , polyDiv
     , multScalaire
+    , inverseModulo
+    , mapPolynomial
     , applyPolynomial
-    , computePolynomialAt
-    , modInv
-    , polyGCDExt
+    , valueAt
 ) where
 
 import Algebra.Ring
@@ -131,9 +130,9 @@ multPolynomial (Polynomial (x:xs)) q
         (multScalaire x q) -- a0*q
         (raiseDegree $ multPolynomial (polynomial xs) q) -- X*(a1*q + X*(a2*q + ...))
 
-infixl 7 `modInv`
-modInv :: Field a => Polynomial a -> Polynomial a -> Polynomial a
-modInv b m = a
+infixl 7 `inverseModulo`
+inverseModulo :: Field a => Polynomial a -> Polynomial a -> Polynomial a
+inverseModulo b m = a
   where
     (_, (a, _)) = polyGCDExt b m
 
@@ -159,9 +158,9 @@ trim p = Polynomial $ trim' $ coeffs p
 mapPolynomial :: (Field b) => (a -> b) -> Polynomial a -> Polynomial b
 mapPolynomial f = polynomial . map f . coeffs
 
-infixl 9 `computePolynomialAt`
-computePolynomialAt :: Ring a => Polynomial a -> a -> a
-computePolynomialAt (Polynomial as) x
+infixl 9 `valueAt`
+valueAt :: Ring a => Polynomial a -> a -> a
+valueAt (Polynomial as) x
     = foldl' add zero valueByDegrees
     where
         valueByDegrees = map (\(a, pow) -> if a == zero then zero else a `mult` (powers !! pow)) $ withIndex as
