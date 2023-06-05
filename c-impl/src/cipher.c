@@ -33,10 +33,11 @@ int SubBytes(){
 
 */
 
-int ShiftRows (int State[4]){
-    for (int i = 0; i<4 ; i++){
-           (State[i]<<1)&(7>> State[i]);
-    }
+void ShiftRows (unsigned int State[4]){
+    for (int i = 1; i<4 ; i++){
+            unsigned int firstByte = (State[i]) >> (8*i);
+            State[i] = (State[i] << (i*8)) ^ firstByte;
+        }
 }
 /*
 int MixColumns (){
