@@ -25,8 +25,11 @@ bool eq_tableau ( int tab[],int b, int verif[],int a){
     else
         for (int i = 0; i< b;i++){
             if (tab[i] != verif[i]){
+            printf("On a: \n");
+            afficher_tab(tab);
+            printf("On voulait: \n");
+            afficher_tab(verif);
             return false;
-            break;
         }
         return true;
     }
