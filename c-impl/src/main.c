@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include "cipher.h"
+#include "utils.h"
 
 int main (void){
-    int tab[4][4] = {{0,1,2,3},{4,5,6,7},{8,9,10,11},{12,13,14,15}};
-    int new[4][4] ;
-    new[4][4] = ShiftRows(tab[4][4]);
-    for (int y=0;y<4;y++){
-      for (int x=0;x<4;x++){
-          int c = new[y][x];
-          printf("%c",c); 
-      };
-}
+    int tab[4] = {17,14,43,32};
+    int new[4];
+    new[4] = ShiftRows(tab);
+    afficher_tab(new);
+    afficher_tab(tab);
 }
