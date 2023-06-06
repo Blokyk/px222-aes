@@ -27,13 +27,13 @@ TEST_EXEC = $(BIN_DIR)/run-tests
 
 build-all: build-lib build-app build-test
 
-build-lib: $(OBJS)
+build-lib: $(OBJS) | $(BIN_DIR)
 	$(CC) -c -o $(LIB_BIN) $^ $(LDFLAGS)
 
-build-app: $(APP_OBJS)
+build-app: $(APP_OBJS) | build-lib
 	$(CC) -o $(APP_EXEC) $^ $(LDFLAGS)
 
-build-test: $(TEST_OBJS)
+build-test: $(TEST_OBJS) | build-lib
 	$(CC) -o $(TEST_EXEC) $^ $(LDFLAGS)
 
 run: build-app
@@ -63,6 +63,9 @@ $(OBJ_DIR)/%.o: %.c | $(OBJ_DIR) # the '| $(OBJ_DIR)' thing makes sure the dir e
 	@sed -e 's/.*://' -e 's/\\$$//' < $(OBJ_DIR)/$*.d.tmp | fmt -1 | \
 	  sed -e 's/^ *//' -e 's/$$/:/' >> $(OBJ_DIR)/$*.d
 	@rm -f $(OBJ_DIR)/$*.d.tmp
+
+$(BIN_DIR):
+	mkdir $(BIN_DIR)
 
 $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
