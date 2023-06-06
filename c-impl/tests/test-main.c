@@ -9,8 +9,54 @@
 
 #define check_test(res, exp) assert(eq_block(res, exp) || verif_vs_res_block(exp, res))
 
+#define ok() printf("\x1b[1;32mOK!\x1b[0m\n")
+
+void testUtils() {
+    printf("TEST: linear2block... ");
+
+    byte l1[16] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
+    byte b1[4][4];
+
+    byte v1[4][4] = {
+        { 0x0, 0x4, 0x8, 0xc},
+        { 0x1, 0x5, 0x9, 0xd},
+        { 0x2, 0x6, 0xa, 0xe},
+        { 0x3, 0x7, 0xb, 0xf}
+    };
+
+    linear_to_column_first_block(l1, b1);
+    check_test(b1, v1);
+
+    ok();
+
+
+    printf("TEST: block2linear... ");
+
+    byte b2[4][4] = {
+        { 0x0, 0x4, 0x8, 0xc },
+        { 0x1, 0x5, 0x9, 0xd },
+        { 0x2, 0x6, 0xa, 0xe },
+        { 0x3, 0x7, 0xb, 0xf }
+    };
+
+    byte l2[16];
+
+    byte v2[16] = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf };
+
+    column_first_block_to_linear(b2, l2);
+
+    for (int i = 0; i < 16; i++) {
+        if (l2[i] != v2[i]) {
+            printf("%dth element was different! Expected 0x%x, but got 0x%x\n", i, v2[i], l2[i]);
+            assert (l2 == v2); // will definitely fail
+        }
+    }
+
+    ok();
+}
+
 // test de SubBytes
-void testSubBytes(){
+void testSubBytes() {
     printf("TEST: SubBytes... ");
 
     byte t1[4][4] = {
@@ -47,7 +93,7 @@ void testSubBytes(){
     SubBytes(t2);
     check_test(t2, v2);
 
-    printf("\x1b[1;32mOK!\x1b[0m\n");
+    ok();
 }
 
 // test de ShiftRows
@@ -89,7 +135,7 @@ void testShiftRows(){
     ShiftRows(t2);
     check_test(t2, v2);
 
-    printf("\x1b[1;32mOK!\x1b[0m\n");
+    ok();
 }
 
 void testMixColumns() {
@@ -129,7 +175,7 @@ void testMixColumns() {
     MixColumns(t2),
     check_test(t2, v2);
 
-    printf("\x1b[1;32mOK!\x1b[0m\n");
+    ok();
 }
 
 void testAddRoundKey() {
@@ -183,13 +229,16 @@ void testAddRoundKey() {
     AddRoundKey(t2, k2);
     check_test(t2, v2);
 
-    printf("\x1b[1;32mOK!\x1b[0m\n");
+    ok();
 }
 
 int main (void){
+    testUtils();
+
     testSubBytes();
     testShiftRows();
     testMixColumns();
     testAddRoundKey();
-    printf("Every tests passed!\n");
+
+    printf("\x1b[1;32mEvery tests passed!\x1b[0m\n");
 }
