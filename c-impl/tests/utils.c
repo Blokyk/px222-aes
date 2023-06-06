@@ -12,7 +12,6 @@ bool eq_block(byte blk1[4][4], byte blk2[4][4]) {
                 return false;
         }
     }
-
     return true;
 }
 
@@ -23,7 +22,6 @@ void print_block(byte blk[4][4]) {
         for (int j = 0; j < 4; j++) {
             printf("%02x ", blk[i][j]);
         }
-
         printf("|\n");
     }
 }
