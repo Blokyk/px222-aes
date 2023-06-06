@@ -10,7 +10,7 @@
 
 //byte State[4];
 
-/* void Cipher (struct block *s, int CipherKey){
+/* void Cipher (){
     AddRoundKey();
     for (int i; i=0; Nr-1){
         SubBytes();
@@ -26,10 +26,6 @@
     printf("Result is:  \n");
     printf("%x",State); // faire une fonction d'affichage
 }
-
-int AddRoundKey(){
-}
-
 
 */
 
@@ -66,6 +62,14 @@ void MixColumns(byte State[4][4]){
     for (int i = 0 ; i<4 ; i++){
         for (int x = 0 ; x<4 ; x++){
              State[i][x] = Inter [i][x];
+        }
+    }
+}
+
+void AddRoundKey(byte State [4][4],byte Cipher[4][4]){
+    for (int i= 0; i<4 ; i++){
+        for (int j=0; j<4 ;j++){
+            Cipher[j][i] = State[j][i] ^ Cipher[j][i];
         }
     }
 }

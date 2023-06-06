@@ -2,10 +2,9 @@
 #include <stdint.h>
 #define Nb 4
 
-void Cipher (uint32_t State, uint32_t CipherKey);
+void Cipher (byte State, byte CipherKey);
 
-void AddRoundKey();
-
+void AddRoundKey(byte State [4][4],byte Cipher[4][4]);
 void SubBytes(byte State[4][4]);
 void ShiftRows(byte State[4][4]);
 void MixColumns(byte State[4][4]);
