@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include "../src/byte.h"
 #include "../src/cipher.h"
 #include "../src/utils.h"
 
@@ -8,6 +9,17 @@ void testShiftRows(uint32_t tab[4], uint32_t verif[4]){
     ShiftRows(tab);
     renvoi (eq_tableau (tab,4,verif,4));
 }
+
+// test de SHiftRows2
+void testShiftRows2(byte tab[4][4], byte verif[4][4]){
+    ShiftRows2(tab);
+    renvoi (eq_tableau (tab[0],4, verif[0],4));
+    renvoi (eq_tableau (tab[1],4, verif[1],4));
+    renvoi (eq_tableau (tab[2],4, verif[2],4));
+    renvoi (eq_tableau (tab[3],4, verif[3],4));
+}
+
+// test de SubBytes
 void testSubBytes(uint32_t tab[4],uint32_t verif[4]){
     SubBytes(tab);
     renvoi (eq_tableau (tab,4,verif,4));
@@ -23,4 +35,20 @@ int main (void){
     testShiftRows(test1,verif1);
     testShiftRows(test2,verif2);
     testSubBytes(test3,verif3);
+
+    byte tb1[4][4] = {
+        {0x00, 0x01, 0x02, 0x03},
+        {0x04, 0x05, 0x06, 0x07},
+        {0x08, 0x09, 0x0a, 0x0b},
+        {0x0c, 0x0d, 0x0e, 0x0f}
+    };
+
+    byte vb1[4][4] = {
+        {0x00, 0x01, 0x02, 0x03},
+        {0x05, 0x06, 0x07, 0x04},
+        {0x0a, 0x0b, 0x08, 0x09},
+        {0x0f, 0x0c, 0x0d, 0x0e}
+    };
+
+    testShiftRows2(tb1, vb1);
 }

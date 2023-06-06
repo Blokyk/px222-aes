@@ -1,6 +1,9 @@
+#pragma once
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "byte.h"
 
 uint32_t mask (uint32_t a, uint32_t n);
 void afficher_tab(uint32_t tab[4]);
