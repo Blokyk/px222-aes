@@ -14,14 +14,12 @@ LIB_BIN = $(BIN_DIR)/quickaest.so
 APP_SRC := $(wildcard app/*.c)
 APP_OBJS = $(OBJS)
 APP_OBJS+= $(addprefix $(OBJ_DIR)/, $(APP_SRC:.c=.o))
-APP_DEPS = $(DEPS)
 APP_DEPS+= $(APP_OBJS:.o=.d)
 APP_EXEC = $(BIN_DIR)/main
 
 TEST_SRC := $(wildcard tests/*.c)
 TEST_OBJS = $(OBJS)
 TEST_OBJS+= $(addprefix $(OBJ_DIR)/, $(TEST_SRC:.c=.o))
-TEST_DEPS = $(DEPS)
 TEST_DEPS+= $(TEST_OBJS:.o=.d)
 TEST_EXEC = $(BIN_DIR)/run-tests
 
