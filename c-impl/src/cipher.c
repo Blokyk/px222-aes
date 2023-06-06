@@ -24,7 +24,7 @@ void Cipher_4 (byte State[4][4], byte Cipher[176]) { // (Nr+1)*4*4 = 11*4*' = 17
     ShiftRows(State);
     AddRoundKey(State,Cipher);
     printf("Result is:  \n");
-    printf("%x",State);
+    print_block(State);
 }
 
 
@@ -65,13 +65,12 @@ void MixColumns(byte State[4][4]){
     }
 }
 void AddRoundKey(byte State [4][4],byte Cipher[16]){
-    for (int i= 0; i<4 ; i++){
-        for (int j=0; j<4 ;j++){
-            int idx1D = j*4 +1;
-            Cipher[j] = State[j][i] ^ Cipher[idx1D];
-        }
-    }
+    *(uint32_t*)State[0] ^= *((uint32_t*)(Cipher));
+    *(uint32_t*)State[1] ^= *((uint32_t*)(Cipher+4));
+    *(uint32_t*)State[2] ^= *((uint32_t*)(Cipher+8));
+    *(uint32_t*)State[3] ^= *((uint32_t*)(Cipher+12));
 }
+
 void Subword(byte Cipher[4][4]){
      for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
