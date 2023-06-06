@@ -50,5 +50,5 @@ int main (void){
         {0x0f, 0x0c, 0x0d, 0x0e}
     };
 
-    testShiftRows2(tb1, vb1);
+    testShiftRows(tb1, vb1);
 }

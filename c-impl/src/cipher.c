@@ -34,7 +34,7 @@ int AddRoundKey(){
 */
 
 // note: this gets compiled to a bunch of rol/ror instructions with -O1/-O2 anyway :P
-void ShiftRows2(byte state[4][4]) {
+void ShiftRows(byte state[4][4]) {
     // note: i = 1 because first row is unchanged
     for (int i = 1; i < 4; i++) {
         // we need to invert the shift directions because we're using little-endian
@@ -48,15 +48,7 @@ void ShiftRows2(byte state[4][4]) {
         *((uint32_t*)state[i]) = res;
     }
 }
-
-void ShiftRows(uint32_t State[4]){
-    for (int i = 1; i < 4 ; i++){
-            uint32_t firstByte = (State[i]) >> (8*(4-i));
-            State[i] = (State[i] << (i*8)) ^ firstByte;
-        }
-}
-
-void SubBytes2(byte state[4][4]) {
+void SubBytes(byte state[4][4]) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             state[i][j] = Sbox[state[i][j]];
@@ -64,13 +56,16 @@ void SubBytes2(byte state[4][4]) {
     }
 }
 
-void SubBytes(uint32_t State[4]){
-    for (int i= 0; i< 4 ; i++){
-        for (int x = 0; x< 4 ; x++){
-            uint32_t byte ;
-            byte = take_byte(State[i],x); // c'est le byte que je veux changer dans state
-            uint32_t sbyte = Sbox[byte];// je dois aller chercher le byte correspondant dans la SBOX
-            State[i] = setByte(State[i], x ,sbyte);
+void MixColumns2(byte State[4][4]){
+    byte Inter[4][4];
+    for (int i = 0 ; i<4 ; i++){
+        for (int x = 0 ; x<4 ; x++){
+            Inter[i][x] = mult2[State[i][x]] ^ mult3[State[(i+1)%4][x]] ^ State[(i+2)%4][x] ^ State[(i+3)%4][x] ;
+        }
+    }
+    for (int i = 0 ; i<4 ; i++){
+        for (int x = 0 ; x<4 ; x++){
+             State[i][x] = Inter [i][x];
         }
     }
 }
