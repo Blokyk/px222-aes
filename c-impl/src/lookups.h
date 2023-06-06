@@ -1,3 +1,5 @@
+#pragma once
+
 #include "byte.h"
 
 byte Sbox[256] =
