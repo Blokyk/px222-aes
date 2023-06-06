@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "../src/byte.h"
+#include "../src/utils.h"
 
 bool eq_block(byte blk1[4][4], byte blk2[4][4]);
 void print_block(byte blk[4][4]);

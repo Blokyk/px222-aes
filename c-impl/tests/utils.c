@@ -15,17 +15,6 @@ bool eq_block(byte blk1[4][4], byte blk2[4][4]) {
     return true;
 }
 
-void print_block(byte blk[4][4]) {
-    for (int i = 0; i < 4; i++) {
-        printf("| ");
-
-        for (int j = 0; j < 4; j++) {
-            printf("%02x ", blk[i][j]);
-        }
-        printf("|\n");
-    }
-}
-
 bool verif_vs_res_block(byte expected[4][4], byte actual[4][4]) {
     printf("\n--- \x1b[1;31mERROR\x1b[0m ---\n");
     printf("Expected:\n");
