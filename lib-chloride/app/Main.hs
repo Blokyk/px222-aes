@@ -6,8 +6,6 @@ import Word
 import Cipher
 import Cipher.Internal.Utils
 
-import CipherUtils
-
 main :: IO ()
 main
     = do
