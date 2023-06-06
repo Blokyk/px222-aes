@@ -56,7 +56,7 @@ void SubBytes(byte state[4][4]) {
     }
 }
 
-void MixColumns2(byte State[4][4]){
+void MixColumns(byte State[4][4]){
     byte Inter[4][4];
     for (int i = 0 ; i<4 ; i++){
         for (int x = 0 ; x<4 ; x++){

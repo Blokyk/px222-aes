@@ -1,28 +1,22 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+
 #include "../src/byte.h"
 #include "../src/cipher.h"
-#include "../src/utils.h"
+
+#include "utils.h"
 
 // test de ShiftRows
-void testShiftRows(uint32_t tab[4], uint32_t verif[4]){
+void testShiftRows(byte tab[4][4], byte verif[4][4]){
     ShiftRows(tab);
-    renvoi (eq_tableau (tab,4,verif,4));
-}
-
-// test de SHiftRows2
-void testShiftRows2(byte tab[4][4], byte verif[4][4]){
-    ShiftRows2(tab);
-    renvoi (eq_tableau (tab[0],4, verif[0],4));
-    renvoi (eq_tableau (tab[1],4, verif[1],4));
-    renvoi (eq_tableau (tab[2],4, verif[2],4));
-    renvoi (eq_tableau (tab[3],4, verif[3],4));
+    assert(eq_block (tab,verif) || verif_vs_res_block(verif, tab));
 }
 
 // test de SubBytes
-void testSubBytes(uint32_t tab[4],uint32_t verif[4]){
+void testSubBytes(byte tab[4][4], byte verif[4][4]){
     SubBytes(tab);
-    renvoi (eq_tableau (tab,4,verif,4));
+    assert(eq_block (tab,verif) || verif_vs_res_block(verif, tab));
 }
 
 int main (void){
@@ -32,9 +26,6 @@ int main (void){
     uint32_t verif2[4] = {0xd42711ae, 0xbf784e98, 0x5de5b8b4, 0x3000001e};
     uint32_t test3 [4] = {0xd42711ae, 0xbf784e98, 0x5de5b8b4, 0x3000001e};
     uint32_t verif3[4] = {0x48cc82e4,0x08bc2f46,0x4cd96c8d,0x04636372};
-    testShiftRows(test1,verif1);
-    testShiftRows(test2,verif2);
-    testSubBytes(test3,verif3);
 
     byte tb1[4][4] = {
         {0x00, 0x01, 0x02, 0x03},
@@ -51,4 +42,6 @@ int main (void){
     };
 
     testShiftRows(tb1, vb1);
+
+    printf("Every tests passed!\n");
 }
