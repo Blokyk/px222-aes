@@ -2,7 +2,7 @@
 #include <stdint.h>
 #define Nb 4
 
-void Cipher (byte State, byte CipherKey);
+void Cipher_4 (byte State[4][4], byte Cipher[4][4]);
 
 void AddRoundKey(byte State [4][4],byte Cipher[4][4]);
 void SubBytes(byte State[4][4]);

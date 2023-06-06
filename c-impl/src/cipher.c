@@ -7,27 +7,26 @@
 
 #define Nb 4
 #define Nk 4
+#define Nr 10
 
-//byte State[4];
-
-/* void Cipher (){
-    AddRoundKey();
-    for (int i; i=0; Nr-1){
-        SubBytes();
+void Cipher_4 (byte State[4][4], byte Cipher[4][4]){
+    AddRoundKey(State, Cipher);
+    for (int i=0; i<(Nr-1); i++){
+        SubBytes(State);
         ShiftRows(State);
-        MixColumns();
-        AddRoundKey();
+        MixColumns(State);
+        AddRoundKey(State,Cipher);
         printf("State is : \n");
-        printf("%x",State); // faire une fonction d'affichage
+        print_block(State); // faire une fonction d'affichage
     }
-    SubBytes();
-    hiftRows();
-    AddRoundKey();
+    SubBytes(State);
+    ShiftRows(State);
+    AddRoundKey(State,Cipher);
     printf("Result is:  \n");
     printf("%x",State); // faire une fonction d'affichage
 }
 
-*/
+
 
 // note: this gets compiled to a bunch of rol/ror instructions with -O1/-O2 anyway :P
 void ShiftRows(byte state[4][4]) {

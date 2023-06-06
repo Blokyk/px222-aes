@@ -19,6 +19,7 @@ void testSubBytes(byte tab[4][4], byte verif[4][4]){
     assert(eq_block (tab,verif) || verif_vs_res_block(verif, tab));
 }
 
+
 uint32_t test1 [4] = {0x11,0x0e,0x2b,0x20};
 uint32_t verif1[4] = {0x11,0x00000e00,0x002b0000,0x20000000};
 uint32_t test2 [4] = {0xd42711ae, 0xe0bf98f1, 0xb8b45de5, 0x1e415230};
