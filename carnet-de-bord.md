@@ -273,7 +273,7 @@ haskell, et en avons conclu qu'un petit ménage au niveau de l'API ne serait pas
 trop, mais aussi qu'implémenter différent mode de cipher serait une bonne idée qui
 ne devrait pas prendre *trop* de temps.
 
-# Séance 6 -- 5/06/2023
+# Jalon 1
 
 ## Objectifs
 
@@ -288,3 +288,41 @@ Léa:
 Zoë:
   - [ ] ajouter infos technique au CdB
   - [ ] doc: choix techniques
+
+# Séance 6 -- 05/06/2023
+
+## Objectifs
+
+Commun :
+  - [x] commencer l'implémentation en C
+  - [x] mettre à jour le carnet de bord et continuer le suivi de séances
+
+Léa :
+  - [x] implémenter le Cipher et ses différentes fonctions
+  - [x] écriture des tests
+
+Zoë :
+  - [x] implémenter le Cipher et ses différentes fonctions
+  - [x] écriture des tests
+
+## Notes de séances
+Nous avons d'abord choisi le type de nos States et Cipher ; c'était un vrai choix technique . Nous avons donc commencé par des ``` unsigned int ``` mais avons finalement préféré le  type ``` byte ``` plus pratique pour nos manipulations.
+Nous avons rencontré des difficultés à implémenter SubBytes et ShiftRows .
+Commencement du make file.
+
+# Séance 7 -- 06/06/2023
+
+## Objectifs
+
+Commun :
+  -[] Finir les fonctions du Cipher
+  -[] Continuer de remplir le carnet de bord
+  -[] Réfléchir / commencer l'inversion
+
+Léa :
+  -[] Implémenter MixColumns et AddRoundKey
+  -[] Coder le Cipher
+
+Zoë :
+  -[] vaincre le Makefile
+  -[] Organiser les tests
