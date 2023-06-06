@@ -29,6 +29,7 @@ void print_block(byte blk[4][4]) {
 }
 
 bool verif_vs_res_block(byte expected[4][4], byte actual[4][4]) {
+    printf("\n--- \x1b[1;31mERROR\x1b[0m ---\n");
     printf("Expected:\n");
     print_block(expected);
     printf("Actual:\n");
