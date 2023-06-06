@@ -31,7 +31,7 @@ build-lib: $(OBJS) | $(BIN_DIR)
 build-app: $(APP_OBJS) | build-lib
 	$(CC) -o $(APP_EXEC) $^ $(LDFLAGS)
 
-build-test: $(TEST_OBJS) | build-lib
+build-test: $(TEST_OBJS) | build-debug
 	$(CC) -o $(TEST_EXEC) $^ $(LDFLAGS)
 
 run: build-app
@@ -41,7 +41,7 @@ test: build-test
 	@./$(TEST_EXEC)
 
 build-debug: CFLAGS += -DDEBUG
-build-debug: clean | build
+build-debug: build-lib
 
 debug: build-debug
 	@ASAN_OPTIONS="detect_leaks=0" gdb ./$(APP_EXEC)
