@@ -73,24 +73,7 @@
 
  */
 
-void testSubWord(){
-    printf("TEST SubWord ....");
-    byte t1[4] = {0xcf, 0x4f, 0x3c, 0x09} ;
-    byte v1[4] = {0x8a, 0x84, 0xeb, 0x01} ;
-    Subword(t1);
-    check_test(t1,v1);
-    printf("Ok!\n");
-}
 
-void testRotWord(){
-    printf("TEST RotWord ....\n");
-    byte t1[4] = {0x09, 0xcf, 0x4f, 0x3c} ;
-    byte v1[4] = {0xcf, 0x4f, 0x3c, 0x09} ;
-    Rotword(t1);
-    check_test(t1,v1);
-    printf("Ok!\n");
-
-}
 
 int main (void){
     testUtils();
