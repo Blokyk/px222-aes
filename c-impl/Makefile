@@ -1,5 +1,8 @@
 CC ?= gcc
-CFLAGS += -march=native -Wall -Wextra -Wno-format-extra-args -g -flto -fshort-enums -fsanitize=address,leak
+WARNS += -Wall -Wextra
+NO_WARNS += -Wno-unused-value -Wno-format-extra-args
+CFLAGS += $(WARNS) $(NO_WARNS)
+CFLAGS += -march=native -g -flto -fshort-enums -fsanitize=address,leak
 LDFLAGS += -lcrypt -flto -fsanitize=address,leak
 
 OBJ_DIR = obj
@@ -26,7 +29,7 @@ TEST_EXEC = $(BIN_DIR)/run-tests
 build-all: build-lib build-app build-test
 
 build-lib: $(OBJS) | $(BIN_DIR)
-	$(CC) -c -o $(LIB_BIN) $^ $(LDFLAGS)
+#	$(CC) -c -o $(LIB_BIN) $^ $(LDFLAGS)
 
 build-app: $(APP_OBJS) | build-lib
 	$(CC) -o $(APP_EXEC) $^ $(LDFLAGS)
