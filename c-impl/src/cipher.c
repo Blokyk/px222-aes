@@ -9,7 +9,6 @@
 #include "lookups.h"
 #include "utils.h"
 
-#define make_word(b3, b2, b1, b0) (uint32_t)((b3<<(8*3)) + (b2<<(8*2)) + (b1<<8) + b0)
 
 void Cipher(byte data[4][4], byte key[], int nr) {
     log("Initial state: \n");
