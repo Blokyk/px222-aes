@@ -1,32 +1,79 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <byteswap.h>
+
 #include "byte.h"
 #include "cipher.h"
 #include "lookups.h"
 #include "utils.h"
 
-#define Nb 4
-#define Nk 4
-#define Nr 10
+#define make_word(b3, b2, b1, b0) (uint32_t)((b3<<(8*3)) + (b2<<(8*2)) + (b1<<8) + b0)
 
-void Cipher_4 (byte State[4][4], byte Cipher[176]) { // (Nr+1)*4*4 = 11*4*' = 176
-    AddRoundKey(State, Cipher);
-    for (int i=0; i<(Nr-1); i++){
-        SubBytes(State);
-        ShiftRows(State);
-        MixColumns(State);
-        AddRoundKey(State,Cipher);
-        printf("State is : \n");
-        print_block(State);
-        Cipher = Cipher+16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+void Cipher(byte State[4][4], byte Cipher[], int nr) {
+    printf("Initial state: \n");
+    print_block(State);
+
+    for (int i = 0; i < KEY16_FULL_SIZE; i++) {
+        if (i % 4 == 0)
+            printf("\n");
+        if (i % 16 == 0)
+            printf("--------\n");
+        printf("%02x", Cipher[i]);
     }
+
+    AddRoundKey(State, Cipher);
+    Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+
+    printf("After AddRoundKey(i=0): \n");
+    print_block(State);
+
+    for (int i=0; i < nr - 1; i++){
+        SubBytes(State);
+        printf("[i=%d] after SubBytes: \n", i);
+        print_block(State);
+        ShiftRows(State);
+        printf("[i=%d] after ShiftRows: \n", i);
+        print_block(State);
+        MixColumns(State);
+        printf("[i=%d] after MixColumns: \n", i);
+        print_block(State);
+        AddRoundKey(State, Cipher);
+        Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+        printf("[i=%d] after AddRoundKey: \n", i);
+        print_block(State);
+    }
+
     SubBytes(State);
+    printf("After final SubBytes: \n");
+    print_block(State);
     ShiftRows(State);
-    AddRoundKey(State,Cipher);
+    printf("After final ShiftRows: \n");
+    print_block(State);
+    AddRoundKey(State, Cipher);
+    printf("After final AddRoundKey: \n");
+    print_block(State);
+
     printf("Result is:  \n");
     print_block(State);
 }
 
+void AddRoundKey(byte State [4][4], byte Cipher[16]) {
+    for (int i = 0; i < 4; i++) {
+        State[i][0] ^= Cipher[i];
+        State[i][1] ^= Cipher[i+4];
+        State[i][2] ^= Cipher[i+8];
+        State[i][3] ^= Cipher[i+12];
+    }
+}
+
+void SubBytes(byte state[4][4]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            state[i][j] = Sbox[state[i][j]];
+        }
+    }
+}
 
 // note: this gets compiled to a bunch of rol/ror instructions with -O1/-O2 anyway :P
 void ShiftRows(byte state[4][4]) {
@@ -37,17 +84,7 @@ void ShiftRows(byte state[4][4]) {
         // (e.g., when converting byte[] {00, 01, 02, 03} to a uint32_t, we'll get 0x03020100)
 
         uint32_t asWord = *((uint32_t*)state[i]);
-        uint32_t head = asWord << (8*(4-i));
-        uint32_t tail = asWord >> (8*i);
-        uint32_t res = head | tail;
-        *((uint32_t*)state[i]) = res;
-    }
-}
-void SubBytes(byte state[4][4]) {
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            state[i][j] = Sbox[state[i][j]];
-        }
+        *((uint32_t*)state[i]) = ROR(asWord, 8*i);
     }
 }
 
@@ -64,48 +101,104 @@ void MixColumns(byte State[4][4]){
         }
     }
 }
-void AddRoundKey(byte State [4][4],byte Cipher[16]){
-    *(uint32_t*)State[0] ^= *((uint32_t*)(Cipher));
-    *(uint32_t*)State[1] ^= *((uint32_t*)(Cipher+4));
-    *(uint32_t*)State[2] ^= *((uint32_t*)(Cipher+8));
-    *(uint32_t*)State[3] ^= *((uint32_t*)(Cipher+12));
+
+void InverseCipher(byte State[4][4], byte Cipher[], int nr) {
+    AddRoundKey(State, Cipher);
+    Cipher += 16; // offset after use of first key
+
+    for (int i = 0; i < nr - 1; i++) {
+        InvShiftRows(State);
+        InvSubBytes(State);
+        AddRoundKey(State, Cipher);
+        Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+        InvMixColumns(State);
+
+        printf("State is : \n");
+        print_block(State);
+    }
+
+    InvShiftRows(State);
+    InvSubBytes(State);
+    AddRoundKey(State, Cipher);
+
+    printf("Result is:  \n");
+    print_block(State);
 }
 
-void Subword(byte Cipher[4][4]){
-     for (int i = 0; i < 4; i++) {
+void InvSubBytes(byte state[4][4]) {
+    for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            Cipher[i][j] = Sbox[Cipher[i][j]];
+            state[i][j] = InvSbox[state[i][j]];
         }
     }
 }
-void Rotword(byte Cipher[4][4]){
-    byte inter ;
-    for (int i=0; i<4 ; i++){
-        inter = Cipher[i][0];
-        Cipher[i][0] = Cipher[i][1];
-        Cipher[i][1] = Cipher[i][2];
-        Cipher[i][2] = Cipher[i][3];
-        Cipher[i][3] = inter;
+
+// cf ShiftRows
+void InvShiftRows(byte state[4][4]) {
+    for (int i = 1; i < 4; i++) {
+        uint32_t asWord = *((uint32_t*)state[i]);
+        *((uint32_t*)state[i]) = ROL(asWord, 8*i);
+    }
+}
+
+void InvMixColumns(byte State[4][4]) {
+    byte Inter[4][4];
+
+    for (int i = 0 ; i<4 ; i++){
+        for (int x = 0 ; x<4 ; x++){
+            Inter[i][x] = multe[State[i][x]] ^ multb[State[(i+1)%4][x]] ^ multd[State[(i+2)%4][x]] ^ mult9[State[(i+3)%4][x]];
+        }
     }
 
-}
-byte Rcon(){
-    int a =(i+1)*2;
-    byte rcon[i] = {0xa,0x00,0x00,0x00};
-}
-
-
-void Keyexpansion(byte Cipher[4][4]){
-    int i = 0;
-    while (i<Nk){
-        Subword
-        Rotword
-        Rcon
+    for (int i = 0 ; i<4 ; i++){
+        for (int x = 0 ; x<4 ; x++){
+            State[i][x] = Inter [i][x];
+        }
     }
-
 }
 
-void encrypt (byte State[4][4], byte Cipher [4][4]){
-    Keyexpansion(Cipher[4][4]);
-    Cipher_4 (State, Cipher);
+void SubWord(byte w[4]){
+     for (int i = 0; i < 4; i++) {
+        w[i] = Sbox[w[i]];
+    }
+}
+
+void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
+    const int nk = 4;
+
+    const uint32_t rcon[] = {
+        0x00,
+        0x01,
+        0x02,
+        0x04,
+        0x08,
+        0x10,
+        0x20,
+        0x40,
+        0x80,
+        0x1b,
+        0x36
+    };
+
+    // rotword(uint32_t w) = w >> 1 (reversed cause endianess)
+
+    memmove(output, key, 16);
+
+    for (int i = nk; i < Nb*(KEY16_NR+1); i++) {
+        uint32_t w = *(uint32_t*)(output+4*(i-1));
+        // printf("w[i-1] = %08x\n", bswap_32(w));
+
+        if (i % nk == 0) {
+            w = ROR(w, 8);
+            // printf("i %% nk == 0 -> %08x", bswap_32(w));
+            SubWord(&w);
+            // printf(" -> %08x", bswap_32(w));
+            w ^= rcon[i/nk];
+            // printf(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
+        }
+
+        // printf("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));
+
+        *(uint32_t*)(output+4*i) = *(uint32_t*)(output+4*(i-nk)) ^ w;
+    }
 }

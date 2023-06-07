@@ -16,6 +16,14 @@ void print_block(byte blk[4][4]) {
     }
 }
 
+void print_array(byte a[], size_t n) {
+    printf("[");
+    for (size_t i = 0; i < n; i++) {
+        printf("0x%x, ");
+    }
+    printf("]\n");
+}
+
 // { 0, 1, 2, 3, ... } = { { 0, ... }, { 1, ... }, { 2, ... }, { 3, ... }}
 void linear_to_column_first_block(byte line[16], byte blk[4][4]) {
     for (int i = 0; i < 4; i++) {

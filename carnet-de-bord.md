@@ -293,15 +293,15 @@ Zoë:
 
 ## Objectifs
 
-Commun :
+Commun:
   - [x] commencer l'implémentation en C
   - [x] mettre à jour le carnet de bord et continuer le suivi de séances
 
-Léa :
+Léa:
   - [x] implémenter le Cipher et ses différentes fonctions
   - [x] écriture des tests
 
-Zoë :
+Zoë:
   - [x] implémenter le Cipher et ses différentes fonctions
   - [x] écriture des tests
 
@@ -314,15 +314,28 @@ Commencement du make file.
 
 ## Objectifs
 
-Commun :
-  -[] Finir les fonctions du Cipher
-  -[] Continuer de remplir le carnet de bord
-  -[] Réfléchir / commencer l'inversion
+Commun:
+  - [ ] Finir les fonctions du Cipher
+  - [ ] Continuer de remplir le carnet de bord
+  - [ ] Réfléchir / commencer l'inversion
 
-Léa :
-  -[] Implémenter MixColumns et AddRoundKey
-  -[] Coder le Cipher
+Léa:
+  - [ ] Implémenter MixColumns et AddRoundKey
+  - [ ] Coder le Cipher
 
-Zoë :
-  -[] vaincre le Makefile
-  -[] Organiser les tests
+Zoë:
+  - [x] vaincre le Makefile
+  - [x] Organiser les tests
+
+# Séance 8 -- 07/06/2023
+
+## Objectifs
+
+Commun:
+  - [ ] Finir cipher inverse
+
+Léa:
+  - [ ] a
+
+Zoë:
+  - [ ] a
