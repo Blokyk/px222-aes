@@ -289,7 +289,7 @@ void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) {
             // log(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
         }
         else if ( i%nk == 4){
-            SubWord(w) ;
+            SubWord((byte*) &w) ;
         }
 
         // log("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));

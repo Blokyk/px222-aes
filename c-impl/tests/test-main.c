@@ -17,6 +17,7 @@ int main (void){
 
     testExpandKey16();
     testExpandKey24();
+    testExpandKey32();
 
     testSubBytes();
     testShiftRows();
