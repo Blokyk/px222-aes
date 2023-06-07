@@ -7,7 +7,6 @@
 
 void testCipher() {
     printf("TEST: Encrypt... \t");
-    printf("\n");
 
     byte d1[16] = {
         0x32, 0x43, 0xf6, 0xa8,

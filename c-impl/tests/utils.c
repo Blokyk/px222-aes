@@ -5,7 +5,7 @@
 #include "utils.h"
 
 void ok() {
-     printf("\x1b[1;32mOK!\x1b[0m\n");
+    printf("\x1b[1;32mOK!\x1b[0m\n");
 }
 
 void copy_block(byte src[4][4], byte dest[4][4]) {

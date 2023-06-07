@@ -10,15 +10,9 @@
 
 #define make_word(b3, b2, b1, b0) (uint32_t)((b3<<(8*3)) + (b2<<(8*2)) + (b1<<8) + b0)
 
-#ifdef VERBOSE
-#define log printf
-#else
-#define log
-#endif
-
 void Cipher(byte State[4][4], byte Cipher[], int nr) {
     log("Initial state: \n");
-    print_block(State);
+    do_debug(print_block(State));
 
     for (int i = 0; i < KEY16_FULL_SIZE; i++) {
         if (i % 4 == 0)
@@ -32,36 +26,36 @@ void Cipher(byte State[4][4], byte Cipher[], int nr) {
     Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
 
     log("After AddRoundKey(i=0): \n");
-    print_block(State);
+    do_debug(print_block(State));
 
     for (int i=0; i < nr - 1; i++){
         SubBytes(State);
         log("[i=%d] after SubBytes: \n", i);
-        print_block(State);
+        do_debug(print_block(State));
         ShiftRows(State);
         log("[i=%d] after ShiftRows: \n", i);
-        print_block(State);
+        do_debug(print_block(State));
         MixColumns(State);
         log("[i=%d] after MixColumns: \n", i);
-        print_block(State);
+        do_debug(print_block(State));
         AddRoundKey(State, Cipher);
         Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
         log("[i=%d] after AddRoundKey: \n", i);
-        print_block(State);
+        do_debug(print_block(State));
     }
 
     SubBytes(State);
     log("After final SubBytes: \n");
-    print_block(State);
+    do_debug(print_block(State));
     ShiftRows(State);
     log("After final ShiftRows: \n");
-    print_block(State);
+    do_debug(print_block(State));
     AddRoundKey(State, Cipher);
     log("After final AddRoundKey: \n");
-    print_block(State);
+    do_debug(print_block(State));
 
     log("Result is: \n");
-    print_block(State);
+    do_debug(print_block(State));
 }
 
 // beware: GCC generates awful code for this AND the version with make_word
@@ -114,29 +108,37 @@ void InverseCipher(byte State[4][4], byte Cipher[], int nr) {
     AddRoundKey(State, Cipher);
     Cipher += 16; // offset after use of first key
 
+    log("After AddRoundKey(i=0): \n");
+    do_debug(print_block(State));
+
     for (int i = 0; i < nr - 1; i++) {
         InvShiftRows(State);
+        log("[i=%d] after InvShiftRows: \n", i);
+        do_debug(print_block(State));
         InvSubBytes(State);
+        log("[i=%d] after InvSubBytes: \n", i);
+        do_debug(print_block(State));
         AddRoundKey(State, Cipher);
+        log("[i=%d] after AddRoundKey: \n", i);
+        do_debug(print_block(State));
         Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
         InvMixColumns(State);
-
-        log("State is: \n");
-        print_block(State);
+        log("[i=%d] after InvMixColumns: \n", i);
+        do_debug(print_block(State));
     }
 
     InvShiftRows(State);
     log("After final InvShiftRows: \n");
-    print_block(State);
+    do_debug(print_block(State));
     InvSubBytes(State);
     log("After final InvSubBytes: \n");
-    print_block(State);
+    do_debug(print_block(State));
     AddRoundKey(State, Cipher);
     log("After final AddRoundKey: \n");
-    print_block(State);
+    do_debug(print_block(State));
 
     log("Result is: \n");
-    print_block(State);
+    do_debug(print_block(State));
 }
 
 void InvSubBytes(byte state[4][4]) {
@@ -200,18 +202,18 @@ void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
 
     for (int i = nk; i < Nb*(KEY16_NR+1); i++) {
         uint32_t w = *(uint32_t*)(output+4*(i-1));
-        // printf("w[i-1] = %08x\n", bswap_32(w));
+        // log("w[i-1] = %08x\n", bswap_32(w));
 
         if (i % nk == 0) {
             w = ROR(w, 8);
-            // printf("i %% nk == 0 -> %08x", bswap_32(w));
-            SubWord(&w);
-            // printf(" -> %08x", bswap_32(w));
+            // log("i %% nk == 0 -> %08x", bswap_32(w));
+            SubWord((byte*)&w); // a word is just a compact array of bytes after all, right? ;)
+            // log(" -> %08x", bswap_32(w));
             w ^= rcon[i/nk];
-            // printf(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
+            // log(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
         }
 
-        // printf("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));
+        // log("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));
 
         *(uint32_t*)(output+4*i) = *(uint32_t*)(output+4*(i-nk)) ^ w;
     }

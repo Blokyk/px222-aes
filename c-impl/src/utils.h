@@ -5,6 +5,14 @@
 #include <stdint.h>
 #include "byte.h"
 
+#ifdef VERBOSE
+#define log printf
+#define do_debug(a) a
+#else
+#define log
+#define do_debug(a)
+#endif
+
 #define ROR(x, n) ((x >> n) | (x << (32 - n)))
 #define ROL(x, n) ((x << n) | (x >> (32 - n)))
 
