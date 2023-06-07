@@ -32,6 +32,27 @@ void testExpandKey16() {
     ok();
 }
 
-void testExpandKey24() { }
+void testExpandKey24() {
+    printf("TEST: ExpandKey24... \t");
+    byte k1[24] = {
+        0x8e,  0x73, 0xb0, 0xf7,
+        0xda,  0x0e, 0x64, 0x52,
+        0xc8,  0x10, 0xf3, 0x2b,
+        0x80,  0x90, 0x79, 0xe5,
+        0x62,  0xf8, 0xea, 0xd2,
+        0x52,  0x2c, 0x6b, 0x7b
+    };
+    byte o1[KEY24_FULL_SIZE];
+
+    ExpandKey24(k1,o1);
+    assert(
+           o1[KEY24_FULL_SIZE-4] == 0x01
+        && o1[KEY24_FULL_SIZE-3] == 0x00
+        && o1[KEY24_FULL_SIZE-2] == 0x22
+        && o1[KEY24_FULL_SIZE-1] == 0x02
+    );
+
+    ok();
+}
 
 void testExpandKey32() { }

@@ -223,9 +223,83 @@ void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
     }
 }
 
+void ExpandKey24(byte key[24], byte output[KEY24_FULL_SIZE]) {
+    const int nk = 6;
+    const uint32_t rcon[] = {
+        0x00,
+        0x01,
+        0x02,
+        0x04,
+        0x08,
+        0x10,
+        0x20,
+        0x40,
+        0x80,
+        0x1b,
+        0x36
+    };
+
+    memmove(output, key, 24);
+
+    for (int i = nk; i < Nb*(KEY24_NR+1); i++) {
+        uint32_t w = *(uint32_t*)(output+4*(i-1));
+
+        if (i % nk == 0) {
+            w = ROR(w, 8);
+            // log("i %% nk == 0 -> %08x", bswap_32(w));
+            SubWord((byte*)&w); // a word is just a compact array of bytes after all, right? ;)
+            // log(" -> %08x", bswap_32(w));
+            w ^= rcon[i/nk];
+            // log(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
+        }
+
+        // log("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));
+
+        *(uint32_t*)(output+4*i) = *(uint32_t*)(output+4*(i-nk)) ^ w;
+    }
+}
+
+void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) {
+    const int nk = 8;
+    const uint32_t rcon[] = {
+        0x00,
+        0x01,
+        0x02,
+        0x04,
+        0x08,
+        0x10,
+        0x20,
+        0x40,
+        0x80,
+        0x1b,
+        0x36
+    };
+
+    memmove(output, key, 32);
+
+    for (int i = nk; i < Nb*(KEY32_NR+1); i++) {
+        uint32_t w = *(uint32_t*)(output+4*(i-1));
+
+        if (i % nk == 0) {
+            w = ROR(w, 8);
+            // log("i %% nk == 0 -> %08x", bswap_32(w));
+            SubWord((byte*)&w); // a word is just a compact array of bytes after all, right? ;)
+            // log(" -> %08x", bswap_32(w));
+            w ^= rcon[i/nk];
+            // log(" -> (with rcon[i/nk]=%08x) %08x\n", bswap_32(rcon[i/nk]), bswap_32(w));
+        }
+        else if ( i%nk == 4){
+            SubWord(w) ;
+        }
+
+        // log("w[i-nk] = %08x\n", bswap_32(*(uint32_t*)(output+4*(i-nk))));
+
+        *(uint32_t*)(output+4*i) = *(uint32_t*)(output+4*(i-nk)) ^ w;
+    }
+}
+
 void encrypt (byte data[4][4], byte key[], size_t keySize){
     int nr;
-
     byte fullKey[KEY16_FULL_SIZE];
 
     switch (keySize) {
@@ -233,13 +307,13 @@ void encrypt (byte data[4][4], byte key[], size_t keySize){
             nr = 10;
             ExpandKey16(key, fullKey);
             break;
-        case 26:
+        case 24:
             nr = 12;
-            //ExpandKey26(key, fullKey);
+            ExpandKey24(key, fullKey);
             break;
         case 32:
             nr = 14;
-            //ExpandKey32(key, fullKey);
+            ExpandKey32(key, fullKey);
             break;
         default:
             printf("Key must be 16, 24 or 32 bytes long!\n");
@@ -249,6 +323,7 @@ void encrypt (byte data[4][4], byte key[], size_t keySize){
 
     Cipher(data, fullKey, nr);
 }
+
 
 void encrypt_ecb(byte data[], size_t dataSize, byte Key[], size_t keySize){
     if (dataSize % 16 == 0) {
