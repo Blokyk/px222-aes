@@ -19,7 +19,7 @@ void print_block(byte blk[4][4]) {
 void print_array(byte a[], size_t n) {
     printf("[");
     for (size_t i = 0; i < n; i++) {
-        printf("0x%x, ", a);
+        printf("0x%x, ", a[i]);
     }
     printf("]\n");
 }
