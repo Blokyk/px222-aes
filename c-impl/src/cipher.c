@@ -298,40 +298,35 @@ void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) {
     }
 }
 
-void encrypt (byte data[4][4], byte key[], size_t keySize){
-    int nr;
-    byte fullKey[KEY16_FULL_SIZE];
-
+int expandKeyAndGetRoundNumber(byte key[], byte fullKey[], size_t keySize) {
     switch (keySize) {
         case 16:
-            nr = 10;
             ExpandKey16(key, fullKey);
-            break;
+            return 10;
         case 24:
-            nr = 12;
             ExpandKey24(key, fullKey);
-            break;
+            return 12;
         case 32:
-            nr = 14;
             ExpandKey32(key, fullKey);
-            break;
+            return 14;
         default:
             printf("Key must be 16, 24 or 32 bytes long!\n");
             exit(1);
-            break;
+            return -1;
     }
-
-    Cipher(data, fullKey, nr);
 }
 
-
-void encrypt_ecb(byte data[], size_t dataSize, byte Key[], size_t keySize){
+void encrypt_ecb(byte plaintext[], byte ciphertext[], size_t dataSize, byte key[], size_t keySize) {
     if (dataSize % 16 == 0) {
         byte tmp[4][4];
+        byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+
+        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
         for (size_t i = 0; i < dataSize/16; i++) {
-            linear_to_column_first_block(data, tmp);
-            encrypt(tmp, Key, keySize);
-            memcpy(data + i*16, tmp, 16);
+            linear_to_column_first_block(plaintext, tmp);
+            Cipher(tmp, fullKey, nr);
+            memcpy(ciphertext + i*16, tmp, 16);
         }
     }
     else

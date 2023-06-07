@@ -34,4 +34,4 @@ void ExpandKey24(byte key[24], byte output[KEY24_FULL_SIZE]) ;
 void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) ;
 
 void encrypt (byte data[4][4], byte Key[], size_t keySize);
-void encrypt_ecb(byte data[], size_t dataSize, byte Key[], size_t keySize);
+void encrypt_ecb(byte plaintext[], byte ciphertext[], size_t dataSize, byte Key[], size_t keySize);
