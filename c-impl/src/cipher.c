@@ -202,3 +202,47 @@ void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
         *(uint32_t*)(output+4*i) = *(uint32_t*)(output+4*(i-nk)) ^ w;
     }
 }
+
+void encrypt (byte State[4][4], byte Key [4][4]){
+    Keyexpansion(Key[4][4]);
+    Cipher_4 (State,Key);
+}
+
+void encrypt_ecb(byte State[], byte Key [16]){
+    int length = sizeof (State) ;
+    byte Res[4][4] ;
+    if (length%16 == 0){
+        for ( int i=0; i<(length/16); i++){
+            byte Inter[16];
+            for (int j=0 ; j<16; j++){
+                Inter[j] = State[i*16+j];
+            }
+            linear_to_column_first_block(Inter, Res);
+            Cipher_4(Res, Key);
+            print_block(Res);
+        }
+    }
+    else {
+        for ( int i=0; i<(length/16); i++){
+            byte Inter[16];
+            for (int j=0 ; j<16; j++){
+                Inter[j] = State[i*16+j];
+            }
+            linear_to_column_first_block(Inter, Res);
+            Cipher_4(Res,Key);
+            print_block(Res);
+        }
+        for (int i = 16*(length/16); i<(length+1) ; i++){
+            byte Inter[16];
+            for (int j=0 ; j<length%16; j++){
+                Inter[j] = State[i*16+j];
+            }
+            for (int j=length%16 ; j<16; j++){
+                Inter[j] = 0x00;
+            }
+            linear_to_column_first_block(Inter, Res);
+            Cipher_4(Res,Key);
+            print_block(Res);
+        }
+    }
+}
