@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <byteswap.h>
 
 #include "byte.h"
@@ -10,62 +11,62 @@
 
 #define make_word(b3, b2, b1, b0) (uint32_t)((b3<<(8*3)) + (b2<<(8*2)) + (b1<<8) + b0)
 
-void Cipher(byte State[4][4], byte Cipher[], int nr) {
+void Cipher(byte data[4][4], byte key[], int nr) {
     log("Initial state: \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 
     for (int i = 0; i < KEY16_FULL_SIZE; i++) {
         if (i % 4 == 0)
             log("\n");
         if (i % 16 == 0)
             log("--------\n");
-        log("%02x", Cipher[i]);
+        log("%02x", key[i]);
     }
 
-    AddRoundKey(State, Cipher);
-    Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+    AddRoundKey(data, key);
+    key += 16; // on offset key par le nombre de byte consommés dans AddRoundKey
 
     log("After AddRoundKey(i=0): \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 
     for (int i=0; i < nr - 1; i++){
-        SubBytes(State);
+        SubBytes(data);
         log("[i=%d] after SubBytes: \n", i);
-        do_debug(print_block(State));
-        ShiftRows(State);
+        do_debug(print_block(data));
+        ShiftRows(data);
         log("[i=%d] after ShiftRows: \n", i);
-        do_debug(print_block(State));
-        MixColumns(State);
+        do_debug(print_block(data));
+        MixColumns(data);
         log("[i=%d] after MixColumns: \n", i);
-        do_debug(print_block(State));
-        AddRoundKey(State, Cipher);
-        Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
+        do_debug(print_block(data));
+        AddRoundKey(data, key);
+        key += 16; // on offset key par le nombre de byte consommés dans AddRoundKey
         log("[i=%d] after AddRoundKey: \n", i);
-        do_debug(print_block(State));
+        do_debug(print_block(data));
     }
 
-    SubBytes(State);
+    SubBytes(data);
     log("After final SubBytes: \n");
-    do_debug(print_block(State));
-    ShiftRows(State);
+    do_debug(print_block(data));
+    ShiftRows(data);
     log("After final ShiftRows: \n");
-    do_debug(print_block(State));
-    AddRoundKey(State, Cipher);
+    do_debug(print_block(data));
+    AddRoundKey(data, key);
     log("After final AddRoundKey: \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 
     log("Result is: \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 }
 
 // beware: GCC generates awful code for this AND the version with make_word
 //         but Clang doesn't care and generates mostly similar code for either
-void AddRoundKey(byte State [4][4], byte Cipher[16]) {
+void AddRoundKey(byte data[4][4], byte key[16]) {
     for (int i = 0; i < 4; i++) {
-        State[i][0] ^= Cipher[i];
-        State[i][1] ^= Cipher[i+4];
-        State[i][2] ^= Cipher[i+8];
-        State[i][3] ^= Cipher[i+12];
+        data[i][0] ^= key[i];
+        data[i][1] ^= key[i+4];
+        data[i][2] ^= key[i+8];
+        data[i][3] ^= key[i+12];
     }
 }
 
@@ -90,85 +91,88 @@ void ShiftRows(byte state[4][4]) {
     }
 }
 
-void MixColumns(byte State[4][4]){
-    byte Inter[4][4];
-    for (int i = 0 ; i<4 ; i++){
-        for (int x = 0 ; x<4 ; x++){
-            Inter[i][x] = mult2[State[i][x]] ^ mult3[State[(i+1)%4][x]] ^ State[(i+2)%4][x] ^ State[(i+3)%4][x] ;
+void MixColumns(byte data[4][4]){
+    byte tmp[4][4];
+    for (int i = 0 ; i<4 ; i++) {
+        for (int x = 0 ; x<4 ; x++) {
+            tmp[i][x] = mult2[data[i][x]] ^ mult3[data[(i+1)%4][x]] ^ data[(i+2)%4][x] ^ data[(i+3)%4][x] ;
         }
     }
-    for (int i = 0 ; i<4 ; i++){
-        for (int x = 0 ; x<4 ; x++){
-            State[i][x] = Inter [i][x];
+
+    // no need to memcpy, cause compiler will just rewrite it to of moves
+    for (int i = 0 ; i<4 ; i++) {
+        for (int x = 0 ; x<4 ; x++) {
+            data[i][x] = tmp[i][x];
         }
     }
 }
 
-void InverseCipher(byte State[4][4], byte Cipher[], int nr) {
-    AddRoundKey(State, Cipher);
-    Cipher += 16; // offset after use of first key
+void InverseKey(byte data[4][4], byte key[], int nr) {
+    AddRoundKey(data, key);
+    key += 16; // offset after use of first key
 
     log("After AddRoundKey(i=0): \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 
     for (int i = 0; i < nr - 1; i++) {
-        InvShiftRows(State);
+        InvShiftRows(data);
         log("[i=%d] after InvShiftRows: \n", i);
-        do_debug(print_block(State));
-        InvSubBytes(State);
+        do_debug(print_block(data));
+        InvSubBytes(data);
         log("[i=%d] after InvSubBytes: \n", i);
-        do_debug(print_block(State));
-        AddRoundKey(State, Cipher);
+        do_debug(print_block(data));
+        AddRoundKey(data, key);
         log("[i=%d] after AddRoundKey: \n", i);
-        do_debug(print_block(State));
-        Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
-        InvMixColumns(State);
+        do_debug(print_block(data));
+        key += 16; // on offset key par le nombre de byte consommés dans AddRoundKey
+        InvMixColumns(data);
         log("[i=%d] after InvMixColumns: \n", i);
-        do_debug(print_block(State));
+        do_debug(print_block(data));
     }
 
-    InvShiftRows(State);
+    InvShiftRows(data);
     log("After final InvShiftRows: \n");
-    do_debug(print_block(State));
-    InvSubBytes(State);
+    do_debug(print_block(data));
+    InvSubBytes(data);
     log("After final InvSubBytes: \n");
-    do_debug(print_block(State));
-    AddRoundKey(State, Cipher);
+    do_debug(print_block(data));
+    AddRoundKey(data, key);
     log("After final AddRoundKey: \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 
     log("Result is: \n");
-    do_debug(print_block(State));
+    do_debug(print_block(data));
 }
 
-void InvSubBytes(byte state[4][4]) {
+void InvSubBytes(byte data[4][4]) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            state[i][j] = InvSbox[state[i][j]];
+            data[i][j] = InvSbox[data[i][j]];
         }
     }
 }
 
 // cf ShiftRows
-void InvShiftRows(byte state[4][4]) {
+void InvShiftRows(byte data[4][4]) {
     for (int i = 1; i < 4; i++) {
-        uint32_t asWord = *((uint32_t*)state[i]);
-        *((uint32_t*)state[i]) = ROL(asWord, 8*i);
+        uint32_t asWord = *((uint32_t*)data[i]);
+        *((uint32_t*)data[i]) = ROL(asWord, 8*i);
     }
 }
 
-void InvMixColumns(byte State[4][4]) {
-    byte Inter[4][4];
+void InvMixColumns(byte data[4][4]) {
+    byte tmp[4][4];
 
     for (int i = 0 ; i<4 ; i++){
         for (int x = 0 ; x<4 ; x++){
-            Inter[i][x] = multe[State[i][x]] ^ multb[State[(i+1)%4][x]] ^ multd[State[(i+2)%4][x]] ^ mult9[State[(i+3)%4][x]];
+            tmp[i][x] = multe[data[i][x]] ^ multb[data[(i+1)%4][x]] ^ multd[data[(i+2)%4][x]] ^ mult9[data[(i+3)%4][x]];
         }
     }
 
-    for (int i = 0 ; i<4 ; i++){
-        for (int x = 0 ; x<4 ; x++){
-            State[i][x] = Inter [i][x];
+    // memcpy? cf MixColumns
+    for (int i = 0 ; i < 4 ; i++){
+        for (int x = 0 ; x < 4; x++){
+            data[i][x] = tmp[i][x];
         }
     }
 }
@@ -219,30 +223,42 @@ void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
     }
 }
 
-void encrypt (byte State[4][4], byte Key []){
-    int length = sizeof(Key);
-    int Nr;
-    byte Cle;
-    if (length == 16) {Nr = 10; byte Cle[KEY16_FULL_SIZE]; ExpandKey16(Key,Cle);}
-    else if (length== 24) {Nr = 12;}
-    else if (length == 32) {Nr = 14;}
-    else return ("Taille de clé non conventionelle ");
-    Cipher (State,Cle,Nr);
+void encrypt (byte data[4][4], byte key[], size_t keySize){
+    int nr;
+
+    byte fullKey[KEY16_FULL_SIZE];
+
+    switch (keySize) {
+        case 16:
+            nr = 10;
+            ExpandKey16(key, fullKey);
+            break;
+        case 26:
+            nr = 12;
+            //ExpandKey26(key, fullKey);
+            break;
+        case 32:
+            nr = 14;
+            //ExpandKey32(key, fullKey);
+            break;
+        default:
+            printf("Key must be 16, 24 or 32 bytes long!\n");
+            exit(1);
+            break;
+    }
+
+    Cipher(data, fullKey, nr);
 }
 
-/* void encrypt_ecb(byte State[], byte Key [16]){
-    int length = sizeof (State) ;
-    byte Res[4][4] ;
-    if (length%16 == 0){
-        for ( int i=0; i<(length/16); i++){
-            byte Inter[16];
-            for (int j=0 ; j<16; j++){
-                Inter[j] = State[i*16+j];
-            }
-            linear_to_column_first_block(Inter, Res);
-            Cipher(Res, Key);
-            print_block(Res);
+void encrypt_ecb(byte data[], size_t dataSize, byte Key[], size_t keySize){
+    if (dataSize % 16 == 0) {
+        byte tmp[4][4];
+        for (size_t i = 0; i < dataSize/16; i++) {
+            linear_to_column_first_block(data, tmp);
+            encrypt(tmp, Key, keySize);
+            memcpy(data + i*16, tmp, 16);
         }
     }
-    else printf("Taille non conventionnelle!") ;
-} */
+    else
+        printf("Taille non conventionnelle!");
+}
