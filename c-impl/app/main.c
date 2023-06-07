@@ -16,19 +16,19 @@ int main(void) {
     uint8_t *data = malloc(blocks*16);
     uint8_t *dest = malloc(blocks*16);
 
-    for(size_t i = 0; i < blocks*16; i++)
-       data[i] = rand();
-
     uint8_t key[16];
 
-    for(size_t i = 0; i < 16; i++)
-       key[i] = rand();
+    // for(size_t i = 0; i < blocks*16; i++)
+    //    data[i] = rand();
 
-    encrypt_ecb(data, dest, blocks*16, key, 16);
+    // for(size_t i = 0; i < 16; i++)
+    //    key[i] = rand();
 
-    free(data);
-    free(dest);
-    return 0;
+    // encrypt_ecb(data, dest, blocks*16, key, 16);
+
+    // free(data);
+    // free(dest);
+    // return 0;
 
     struct timeval results[ITER];
 
@@ -37,8 +37,6 @@ int main(void) {
 
         for(size_t i = 0; i < blocks*16; i++)
             data[i] = rand();
-
-        uint8_t key[16];
 
         for(size_t i = 0; i < 16; i++)
             key[i] = rand();

@@ -13,11 +13,17 @@
 #include "utilsTest.h"
 
 int main (void){
+    printf("\n");
+
     testUtils();
+
+    printf("\n");
 
     testExpandKey16();
     testExpandKey24();
     testExpandKey32();
+
+    printf("\n");
 
     testSubBytes();
     testShiftRows();
@@ -25,11 +31,18 @@ int main (void){
     testAddRoundKey();
 
     testCipher();
-    testEncrypt();
+    testEncryptECB();
+
+    printf("\n");
 
     testInvSubBytes();
     testInvShiftRows();
     testInvMixColumns();
+
+    testInverseCipher();
+    testDecryptECB();
+
+    printf("\n");
 
     printf("\x1b[1;32mEvery tests passed!\x1b[0m\n");
 }

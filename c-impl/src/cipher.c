@@ -11,9 +11,10 @@
 
 
 void Cipher(byte data[4][4], byte key[], int nr) {
-    log("Initial state: \n");
+    log("Initial state:\n");
     do_debug(print_block(data));
 
+    log("Encrypting with key:\n");
     for (int i = 0; i < KEY16_FULL_SIZE; i++) {
         if (i % 4 == 0)
             log("\n");
@@ -28,16 +29,19 @@ void Cipher(byte data[4][4], byte key[], int nr) {
     log("After AddRoundKey(i=0): \n");
     do_debug(print_block(data));
 
-    for (int i=0; i < nr - 1; i++){
+    for (int i=0; i < nr - 1; i++) {
         SubBytes(data);
         log("[i=%d] after SubBytes: \n", i);
         do_debug(print_block(data));
+
         ShiftRows(data);
         log("[i=%d] after ShiftRows: \n", i);
         do_debug(print_block(data));
+
         MixColumns(data);
         log("[i=%d] after MixColumns: \n", i);
         do_debug(print_block(data));
+
         AddRoundKey(data, key);
         key += 16; // on offset key par le nombre de byte consommés dans AddRoundKey
         log("[i=%d] after AddRoundKey: \n", i);
@@ -47,9 +51,11 @@ void Cipher(byte data[4][4], byte key[], int nr) {
     SubBytes(data);
     log("After final SubBytes: \n");
     do_debug(print_block(data));
+
     ShiftRows(data);
     log("After final ShiftRows: \n");
     do_debug(print_block(data));
+
     AddRoundKey(data, key);
     log("After final AddRoundKey: \n");
     do_debug(print_block(data));
@@ -91,7 +97,7 @@ void ShiftRows(byte state[4][4]) {
 }
 
 void MixColumns(byte data[4][4]){
-    byte tmp[4][4];
+    static byte tmp[4][4];
     for (int i = 0 ; i<4 ; i++) {
         for (int x = 0 ; x<4 ; x++) {
             tmp[i][x] = mult2[data[i][x]] ^ mult3[data[(i+1)%4][x]] ^ data[(i+2)%4][x] ^ data[(i+3)%4][x] ;
@@ -106,9 +112,25 @@ void MixColumns(byte data[4][4]){
     }
 }
 
-void InverseKey(byte data[4][4], byte key[], int nr) {
+void InverseCipher(byte data[4][4], byte key[], int nr) {
+    log("Initial state:\n");
+    do_debug(print_block(data));
+
+    log("Decrypting with key:\n");
+    for (int i = 0; i < KEY16_FULL_SIZE; i++) {
+        if (i % 4 == 0)
+            log("\n");
+        if (i % 16 == 0)
+            log("--------\n");
+        log("%02x", key[i]);
+    }
+
+    int endOfKey = Nb*(nr + 1)*4 - 16; // offset of the last block of the key
+
+    key += endOfKey;
+
     AddRoundKey(data, key);
-    key += 16; // offset after use of first key
+    key -= 16; // offset after use of first key
 
     log("After AddRoundKey(i=0): \n");
     do_debug(print_block(data));
@@ -117,13 +139,16 @@ void InverseKey(byte data[4][4], byte key[], int nr) {
         InvShiftRows(data);
         log("[i=%d] after InvShiftRows: \n", i);
         do_debug(print_block(data));
+
         InvSubBytes(data);
         log("[i=%d] after InvSubBytes: \n", i);
         do_debug(print_block(data));
+
         AddRoundKey(data, key);
         log("[i=%d] after AddRoundKey: \n", i);
         do_debug(print_block(data));
-        key += 16; // on offset key par le nombre de byte consommés dans AddRoundKey
+        key -= 16; // on offset key par le nombre de byte consommés dans AddRoundKey
+
         InvMixColumns(data);
         log("[i=%d] after InvMixColumns: \n", i);
         do_debug(print_block(data));
@@ -132,9 +157,11 @@ void InverseKey(byte data[4][4], byte key[], int nr) {
     InvShiftRows(data);
     log("After final InvShiftRows: \n");
     do_debug(print_block(data));
+
     InvSubBytes(data);
     log("After final InvSubBytes: \n");
     do_debug(print_block(data));
+
     AddRoundKey(data, key);
     log("After final AddRoundKey: \n");
     do_debug(print_block(data));
@@ -160,7 +187,7 @@ void InvShiftRows(byte data[4][4]) {
 }
 
 void InvMixColumns(byte data[4][4]) {
-    byte tmp[4][4];
+    static byte tmp[4][4];
 
     for (int i = 0 ; i<4 ; i++){
         for (int x = 0 ; x<4 ; x++){
@@ -177,7 +204,7 @@ void InvMixColumns(byte data[4][4]) {
 }
 
 void SubWord(byte w[4]){
-     for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         w[i] = Sbox[w[i]];
     }
 }
@@ -317,17 +344,40 @@ int expandKeyAndGetRoundNumber(byte key[], byte fullKey[], size_t keySize) {
 
 void encrypt_ecb(byte plaintext[], byte ciphertext[], size_t dataSize, byte key[], size_t keySize) {
     if (dataSize % 16 == 0) {
-        byte tmp[4][4];
-        byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+        static byte tmp[4][4];
+        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
         int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
 
         for (size_t i = 0; i < dataSize/16; i++) {
+            log("Encrypting block #%02ld", i+1);
             linear_to_column_first_block(plaintext, tmp);
             Cipher(tmp, fullKey, nr);
-            memcpy(ciphertext + i*16, tmp, 16);
+            column_first_block_to_linear(tmp, ciphertext + i*16);
         }
     }
-    else
-        printf("Taille non conventionnelle!");
+    else {
+        printf("Data must a multiple of 16 bytes long!\n");
+        exit(1);
+    }
+}
+
+void decrypt_ecb(byte ciphertext[], byte plaintext[], size_t dataSize, byte key[], size_t keySize) {
+    if (dataSize % 16 == 0) {
+        static byte tmp[4][4];
+        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+
+        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
+        for (size_t i = 0; i < dataSize/16; i++) {
+            log("Decrypting block #%02ld", i+1);
+            linear_to_column_first_block(ciphertext, tmp);
+            InverseCipher(tmp, fullKey, nr);
+            column_first_block_to_linear(tmp, plaintext + i*16);
+        }
+    }
+    else {
+        printf("Data must a multiple of 16 bytes long!\n");
+        exit(1);
+    }
 }

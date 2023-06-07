@@ -1,4 +1,4 @@
-void testEncrypt();
+void testEncryptECB();
 
 void testCipher();
 void testSubBytes();
