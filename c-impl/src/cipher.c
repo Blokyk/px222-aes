@@ -10,54 +10,62 @@
 
 #define make_word(b3, b2, b1, b0) (uint32_t)((b3<<(8*3)) + (b2<<(8*2)) + (b1<<8) + b0)
 
+#ifdef VERBOSE
+#define log printf
+#else
+#define log
+#endif
+
 void Cipher(byte State[4][4], byte Cipher[], int nr) {
-    printf("Initial state: \n");
+    log("Initial state: \n");
     print_block(State);
 
     for (int i = 0; i < KEY16_FULL_SIZE; i++) {
         if (i % 4 == 0)
-            printf("\n");
+            log("\n");
         if (i % 16 == 0)
-            printf("--------\n");
-        printf("%02x", Cipher[i]);
+            log("--------\n");
+        log("%02x", Cipher[i]);
     }
 
     AddRoundKey(State, Cipher);
     Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
 
-    printf("After AddRoundKey(i=0): \n");
+    log("After AddRoundKey(i=0): \n");
     print_block(State);
 
     for (int i=0; i < nr - 1; i++){
         SubBytes(State);
-        printf("[i=%d] after SubBytes: \n", i);
+        log("[i=%d] after SubBytes: \n", i);
         print_block(State);
         ShiftRows(State);
-        printf("[i=%d] after ShiftRows: \n", i);
+        log("[i=%d] after ShiftRows: \n", i);
         print_block(State);
         MixColumns(State);
-        printf("[i=%d] after MixColumns: \n", i);
+        log("[i=%d] after MixColumns: \n", i);
         print_block(State);
         AddRoundKey(State, Cipher);
         Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
-        printf("[i=%d] after AddRoundKey: \n", i);
+        log("[i=%d] after AddRoundKey: \n", i);
         print_block(State);
     }
 
     SubBytes(State);
-    printf("After final SubBytes: \n");
+    log("After final SubBytes: \n");
     print_block(State);
     ShiftRows(State);
-    printf("After final ShiftRows: \n");
+    log("After final ShiftRows: \n");
     print_block(State);
     AddRoundKey(State, Cipher);
-    printf("After final AddRoundKey: \n");
+    log("After final AddRoundKey: \n");
     print_block(State);
 
-    printf("Result is:  \n");
+    log("Result is: \n");
     print_block(State);
 }
 
+// beware: GCC generates awful code for this AND the version with make_word
+//         but Clang doesn't care and generates mostly similar code for either
 void AddRoundKey(byte State [4][4], byte Cipher[16]) {
     for (int i = 0; i < 4; i++) {
         State[i][0] ^= Cipher[i];
@@ -113,15 +121,21 @@ void InverseCipher(byte State[4][4], byte Cipher[], int nr) {
         Cipher += 16; // on offset Cipher par le nombre de byte consommés dans AddRoundKey
         InvMixColumns(State);
 
-        printf("State is : \n");
+        log("State is: \n");
         print_block(State);
     }
 
     InvShiftRows(State);
+    log("After final InvShiftRows: \n");
+    print_block(State);
     InvSubBytes(State);
+    log("After final InvSubBytes: \n");
+    print_block(State);
     AddRoundKey(State, Cipher);
+    log("After final AddRoundKey: \n");
+    print_block(State);
 
-    printf("Result is:  \n");
+    log("Result is: \n");
     print_block(State);
 }
 
