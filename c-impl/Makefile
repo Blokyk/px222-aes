@@ -3,7 +3,7 @@ WARNS += -Wall -Wextra
 NO_WARNS += -Wno-unused-value -Wno-format-extra-args
 CFLAGS += $(WARNS) $(NO_WARNS)
 CFLAGS += -march=native -g -flto -fshort-enums -fsanitize=address,leak
-LDFLAGS += -lcrypt -flto -fsanitize=address,leak
+LDFLAGS += -flto -fsanitize=address,leak
 
 OBJ_DIR = obj
 
@@ -20,6 +20,12 @@ APP_OBJS+= $(addprefix $(OBJ_DIR)/, $(APP_SRC:.c=.o))
 APP_DEPS+= $(APP_OBJS:.o=.d)
 APP_EXEC = $(BIN_DIR)/main
 
+BENCH_SRC := $(wildcard bench/*.c)
+BENCH_OBJS = $(OBJS)
+BENCH_OBJS+= $(addprefix $(OBJ_DIR)/, $(BENCH_SRC:.c=.o))
+BENCH_DEPS+= $(BENCH_OBJS:.o=.d)
+BENCH_EXEC = $(BIN_DIR)/bench
+
 TEST_SRC := $(wildcard tests/*.c)
 TEST_OBJS = $(OBJS)
 TEST_OBJS+= $(addprefix $(OBJ_DIR)/, $(TEST_SRC:.c=.o))
@@ -34,11 +40,22 @@ build-lib: $(OBJS) | $(BIN_DIR)
 build-app: $(APP_OBJS) | build-lib
 	$(CC) -o $(APP_EXEC) $^ $(LDFLAGS)
 
+build-bench: clean
+	make build-bench_
+
+build-bench_: LDFLAGS = -Ofast -march=native -flto
+build-bench_: CFLAGS = $(WARNS) $(NO_WARNS) -Ofast -march=native -flto -fshort-enums
+build-bench_: $(BENCH_OBJS)
+	$(CC) -o $(BENCH_EXEC) $^ $(LDFLAGS)
+
 build-test: $(TEST_OBJS) | build-debug
 	$(CC) -o $(TEST_EXEC) $^ $(LDFLAGS)
 
 run: build-app
 	@./$(APP_EXEC)
+
+bench: build-bench
+	@./$(BENCH_EXEC)
 
 test: build-test
 	@./$(TEST_EXEC)
@@ -50,7 +67,7 @@ debug: build-debug
 	@ASAN_OPTIONS="detect_leaks=0" gdb ./$(APP_EXEC)
 
 clean:
-	rm -rf $(OBJ_DIR) $(OBJS) $(DEPS) $(APP_OBJS) $(APP_DEPS) $(APP_EXEC) $(TEST_OBJS) $(TEST_DEPS) $(TEST_EXEC)
+	rm -rf $(OBJ_DIR) $(OBJS) $(DEPS) $(APP_OBJS) $(APP_DEPS) $(APP_EXEC) $(BENCH_DEPS) $(BENCH_EXEC) $(TEST_OBJS) $(TEST_DEPS) $(TEST_EXEC)
 
 -include $(DEPS) # import auto-gen'd dependencies
 -include $(TEST_DEPS) # import auto-gen'd dependencies
@@ -72,4 +89,5 @@ $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 	mkdir $(OBJ_DIR)/src
 	mkdir $(OBJ_DIR)/app
+	mkdir $(OBJ_DIR)/bench
 	mkdir $(OBJ_DIR)/tests
