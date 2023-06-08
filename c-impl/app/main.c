@@ -9,18 +9,25 @@
 int main(void) {
     srand(time(NULL));
 
-    const int blocks = 10;
+    const int blocks = 2;
 
-    uint8_t *data = malloc(blocks*16);
-    uint8_t *dest = malloc(blocks*16);
+    uint8_t dest[32];
+    uint8_t data[32] = {
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
 
-    uint8_t key[16];
+        0xc6, 0xa1, 0x3b, 0x37,
+        0x87, 0x8f, 0x5b, 0x82,
+        0x6f, 0x4f, 0x81, 0x62,
+        0xa1, 0xc8, 0xd8, 0x79
+    };
 
-    for(int i = 0; i < blocks*16; i++)
-        data[i] = rand();
+    uint8_t key[24];
 
-    for(int i = 0; i < 16; i++)
-        key[i] = rand();
+    for(int i = 0; i < 24; i++)
+        key[i] = i; // rand();
 
     printf("Key:\n");
 
@@ -37,7 +44,7 @@ int main(void) {
         printf("--------------\n");
     }
 
-    encrypt_ecb(data, dest, blocks*16, key, 16);
+    encrypt_ecb(data, dest, blocks*16, key, 24);
 
     printf("\nResult:\n");
     for (int i = 0; i < blocks; i++) {
@@ -45,7 +52,4 @@ int main(void) {
         print_block(blk);
         printf("--------------\n");
     }
-
-    free(data);
-    free(dest);
 }

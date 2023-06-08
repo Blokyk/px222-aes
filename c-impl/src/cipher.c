@@ -9,6 +9,7 @@
 #include "lookups.h"
 #include "utils.h"
 
+#define mk_word(b3, b2, b1, b0) ((uint32_t)(b3<<(8*3)) + (uint32_t)(b2<<(8*2)) + (uint32_t)(b1<<8) + (uint32_t)b0)
 
 void Cipher(byte data[4][4], const byte key[], int nr) {
     log("Initial state:\n");
@@ -64,8 +65,8 @@ void Cipher(byte data[4][4], const byte key[], int nr) {
     do_debug(print_block(data));
 }
 
-// beware: GCC generates awful code for this AND the version with make_word
-//         but Clang doesn't care and generates mostly similar code for either
+// for some reason, GCC generates better code for a "dumb"
+// version like this rather one that uses casting or w/ever
 void AddRoundKey(byte data[4][4], const byte key[16]) {
     for (int i = 0; i < 4; i++) {
         data[i][0] ^= key[i];
@@ -344,6 +345,10 @@ int expandKeyAndGetRoundNumber(const byte key[], byte fullKey[], size_t keySize)
 
 void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize) {
     if (dataSize % 16 == 0) {
+        // beware! static variables aren't an automatic speed-up!
+        // while they can speed-up some common functions by avoiding
+        // useless allocations, they might also impede data locality,
+        // thus leading to an overall slow-down because of cache misses
         static byte tmp[4][4];
         static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
@@ -351,7 +356,7 @@ void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, con
 
         for (size_t i = 0; i < dataSize/16; i++) {
             log("Encrypting block #%02ld", i+1);
-            linear_to_column_first_block(plaintext, tmp);
+            linear_to_column_first_block(plaintext + i*16, tmp);
             Cipher(tmp, fullKey, nr);
             column_first_block_to_linear(tmp, ciphertext + i*16);
         }
@@ -371,9 +376,68 @@ void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, con
 
         for (size_t i = 0; i < dataSize/16; i++) {
             log("Decrypting block #%02ld", i+1);
-            linear_to_column_first_block(ciphertext, tmp);
+            linear_to_column_first_block(ciphertext + i*16, tmp);
             InverseCipher(tmp, fullKey, nr);
             column_first_block_to_linear(tmp, plaintext + i*16);
+        }
+    }
+    else {
+        printf("Data must a multiple of 16 bytes long!\n");
+        exit(1);
+    }
+}
+
+void encrypt_cbc(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize) {
+    if (dataSize % 16 == 0) {
+        static byte tmp[4][4];
+        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+
+        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
+        byte lastBlock[4][4];
+        linear_to_column_first_block(key, lastBlock);
+
+        for (size_t i = 0; i < dataSize/16; i++) {
+            log("Encrypting block #%02ld", i+1);
+
+            linear_to_column_first_block(plaintext + i*16, tmp);
+
+            // we can just reuse AddRoundKey cause it's just an XOR
+            AddRoundKey(tmp, lastBlock);
+
+            Cipher(tmp, fullKey, nr);
+
+            column_first_block_to_linear(tmp, ciphertext + i*16);
+            linear_to_column_first_block(ciphertext + i*16, lastBlock);
+        }
+    }
+    else {
+        printf("Data must a multiple of 16 bytes long!\n");
+        exit(1);
+    }
+}
+
+void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize) {
+    if (dataSize % 16 == 0) {
+        static byte tmp[4][4];
+        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+
+        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
+        uint64_t *lastBlock = (uint64_t*)key;
+
+        for (size_t i = 0; i < dataSize/16; i++) {
+            log("Decrypting block #%02ld", i+1);
+
+            linear_to_column_first_block(ciphertext + i*16, tmp);
+
+            InverseCipher(tmp, fullKey, nr);
+
+            AddRoundKey(tmp, lastBlock);
+
+            column_first_block_to_linear(tmp, plaintext + i*16);
+
+            lastBlock = (uint64_t*)ciphertext;
         }
     }
     else {

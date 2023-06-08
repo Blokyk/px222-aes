@@ -5,10 +5,7 @@
 #include "cipherTest.h"
 #include "utils.h"
 
-void testEncryptECB() {
-
-    //-------------------------------- test 128 --------------------------------
-
+void testEncryptECB128() {
     printf("TEST: Encrypt (ECB-128) ");
 
     byte d1[16] = {
@@ -43,11 +40,48 @@ void testEncryptECB() {
 
     check_block(o1block, v1block);
 
+    byte d2[32] = {
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+
+        0xc6, 0xa1, 0x3b, 0x37,
+        0x87, 0x8f, 0x5b, 0x82,
+        0x6f, 0x4f, 0x81, 0x62,
+        0xa1, 0xc8, 0xd8, 0x79
+    };
+
+    byte o2[32];
+
+    encrypt_ecb(d2, o2, 32, k1, 16);
+
+    byte o2b1[4][4];
+    linear_to_column_first_block(o2, o2b1);
+    byte o2b2[4][4];
+    linear_to_column_first_block(o2+16, o2b2);
+
+    byte v2b1[4][4] = {
+        {0xc6, 0x87, 0x6f, 0xa1},
+        {0xa1, 0x8f, 0x4f, 0xc8},
+        {0x3b, 0x5b, 0x81, 0xd8},
+        {0x37, 0x82, 0x62, 0x79}
+    };
+    byte v2b2[4][4] = {
+        {0xaf, 0xf7, 0x92, 0x3a},
+        {0x9d, 0xda, 0xb1, 0xd9},
+        {0x99, 0xc8, 0xc4, 0x89},
+        {0x26, 0x71, 0x14, 0x58}
+    };
+
+    check_block(o2b1, v2b1);
+    check_block(o2b2, v2b2);
+
     ok();
+}
 
-    // -------------------------------- test 192 --------------------------------
-
-    printf("TEST: Encrypt (ECB-192)");
+void testEncryptECB192() {
+    printf("TEST: Encrypt (ECB-192) ");
 
     byte d2[16] = {
         0x00, 0x11, 0x22, 0x33,
@@ -83,9 +117,10 @@ void testEncryptECB() {
     check_block(o2block, v2block);
 
     ok();
+}
 
-    //-------------------------------- test 256 --------------------------------
-    printf("TEST: Encrypt (ECB-256)");
+void testEncryptECB256() {
+    printf("TEST: Encrypt (ECB-256) ");
 
     byte d3[16] = {
         0x00, 0X11, 0x22, 0x33,
@@ -123,7 +158,6 @@ void testEncryptECB() {
     check_block(o3block, v3block);
 
     ok();
-
 }
 
 void testCipher() {

@@ -35,3 +35,6 @@ void ExpandKey32(const byte key[32], byte output[KEY32_FULL_SIZE]) ;
 
 void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize);
 void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize);
+
+void encrypt_cbc(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize);
+void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize);

@@ -31,7 +31,11 @@ int main (void){
     testAddRoundKey();
 
     testCipher();
-    testEncryptECB();
+
+    testEncryptECB128();
+    testEncryptECB192();
+    testEncryptECB256();
+
 
     printf("\n");
 

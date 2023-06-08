@@ -56,7 +56,7 @@ void testExpandKey24() {
 }
 
 void testExpandKey32() {
-    printf("TEST : ExpandKey32... \t ") ;
+    printf("TEST: ExpandKey32... \t") ;
     byte k1[32] = {
         0x60, 0x3d, 0xeb, 0x10,
         0x15, 0xca, 0x71, 0xbe,
