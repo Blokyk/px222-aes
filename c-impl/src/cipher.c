@@ -10,7 +10,7 @@
 #include "utils.h"
 
 
-void Cipher(byte data[4][4], byte key[], int nr) {
+void Cipher(byte data[4][4], const byte key[], int nr) {
     log("Initial state:\n");
     do_debug(print_block(data));
 
@@ -66,7 +66,7 @@ void Cipher(byte data[4][4], byte key[], int nr) {
 
 // beware: GCC generates awful code for this AND the version with make_word
 //         but Clang doesn't care and generates mostly similar code for either
-void AddRoundKey(byte data[4][4], byte key[16]) {
+void AddRoundKey(byte data[4][4], const byte key[16]) {
     for (int i = 0; i < 4; i++) {
         data[i][0] ^= key[i];
         data[i][1] ^= key[i+4];
@@ -112,7 +112,7 @@ void MixColumns(byte data[4][4]){
     }
 }
 
-void InverseCipher(byte data[4][4], byte key[], int nr) {
+void InverseCipher(byte data[4][4], const byte key[], int nr) {
     log("Initial state:\n");
     do_debug(print_block(data));
 
@@ -209,7 +209,7 @@ void SubWord(byte w[4]){
     }
 }
 
-void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
+void ExpandKey16(const byte key[16], byte output[KEY16_FULL_SIZE]) {
     const int nk = 4;
 
     const uint32_t rcon[] = {
@@ -249,7 +249,7 @@ void ExpandKey16(byte key[16], byte output[KEY16_FULL_SIZE]) {
     }
 }
 
-void ExpandKey24(byte key[24], byte output[KEY24_FULL_SIZE]) {
+void ExpandKey24(const byte key[24], byte output[KEY24_FULL_SIZE]) {
     const int nk = 6;
     const uint32_t rcon[] = {
         0x00,
@@ -285,7 +285,7 @@ void ExpandKey24(byte key[24], byte output[KEY24_FULL_SIZE]) {
     }
 }
 
-void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) {
+void ExpandKey32(const byte key[32], byte output[KEY32_FULL_SIZE]) {
     const int nk = 8;
     const uint32_t rcon[] = {
         0x00,
@@ -324,7 +324,7 @@ void ExpandKey32(byte key[32], byte output[KEY32_FULL_SIZE]) {
     }
 }
 
-int expandKeyAndGetRoundNumber(byte key[], byte fullKey[], size_t keySize) {
+int expandKeyAndGetRoundNumber(const byte key[], byte fullKey[], size_t keySize) {
     switch (keySize) {
         case 16:
             ExpandKey16(key, fullKey);
@@ -342,7 +342,7 @@ int expandKeyAndGetRoundNumber(byte key[], byte fullKey[], size_t keySize) {
     }
 }
 
-void encrypt_ecb(byte plaintext[], byte ciphertext[], size_t dataSize, byte key[], size_t keySize) {
+void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize) {
     if (dataSize % 16 == 0) {
         static byte tmp[4][4];
         static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
@@ -362,7 +362,7 @@ void encrypt_ecb(byte plaintext[], byte ciphertext[], size_t dataSize, byte key[
     }
 }
 
-void decrypt_ecb(byte ciphertext[], byte plaintext[], size_t dataSize, byte key[], size_t keySize) {
+void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize) {
     if (dataSize % 16 == 0) {
         static byte tmp[4][4];
         static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
