@@ -54,6 +54,9 @@ build-test: $(TEST_OBJS) | build-debug
 run: build-app
 	@./$(APP_EXEC)
 
+bench-verbose: build-bench
+	@./$(BENCH_EXEC) -v
+
 bench: build-bench
 	@./$(BENCH_EXEC)
 
