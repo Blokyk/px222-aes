@@ -6,6 +6,21 @@
 #include "../src/cipher.h"
 #include "../src/utils.h"
 
+#include "../tests/utils.h"
+#include "file.h"
+
+void testEncryptFile(){
+    byte key[16] = {
+        0x2b, 0x7e, 0x15, 0X16,
+        0x28, 0xae, 0xd2, 0Xa6,
+        0xab, 0xf7, 0x15, 0X88,
+        0x09, 0xcf, 0x4f, 0X3c
+    };
+    printf("Encrypting & Decrypting a bitmap : \n");
+    modify_bitmap("app/transporteur.bmp","app/image_finale.bmp",key,16,'A');
+    modify_bitmap("app/image_finale.bmp","app/image_finale2.bmp",key,16,'B');
+}
+
 int main(void) {
     srand(time(NULL));
 
@@ -52,4 +67,5 @@ int main(void) {
         print_block(blk);
         printf("--------------\n");
     }
+    testEncryptFile();
 }

@@ -63,6 +63,9 @@ bench: build-bench
 test: build-test
 	@./$(TEST_EXEC)
 
+app : build-app
+	@./$(APP_EXEC)
+
 build-debug: CFLAGS += -DDEBUG
 build-debug: build-lib
 
