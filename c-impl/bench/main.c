@@ -9,21 +9,19 @@
 
 #include "../src/cipher.h"
 
-struct benchmark_results {
+typedef struct benchmark_results {
     char *name;
     int64_t average_ms;
     int64_t min_ms;
     int64_t max_ms;
     int64_t kilobytes_per_second;
-};
-
-typedef struct benchmark_results results_t;
+} results_t;
 
 void free_result(results_t res) {
     free(res.name);
 }
 
-typedef void *benchmarkable(byte*, byte*, size_t, byte*, size_t);
+typedef void benchmarkable(const byte*, byte*, size_t, const byte*, short);
 
 void print_result_part(const char *partName, const char *sep, const char* suffix, int64_t value, uint8_t color) {
     printf("%s: \x1b[1;%dm", partName, color);
@@ -58,6 +56,8 @@ void print_results(results_t res, bool verbose) {
 }
 
 struct benchmark_results benchmark(const char *name, benchmarkable f, size_t blocks, size_t keySize, int iteration, bool verbose) {
+    size_t nameLength = strlen(name);
+
     size_t dataSize = blocks*16;
 
     uint8_t *data = malloc(dataSize);
@@ -69,7 +69,12 @@ struct benchmark_results benchmark(const char *name, benchmarkable f, size_t blo
 
     if (verbose) {
         printf("--- %s ---\n", name);
-        printf("Params: blocks = %ld, key = %ld, N = %d\n", blocks, keySize, iteration);
+        printf("| b: %ld, k: %ld, N: %02d |\n", blocks, keySize, iteration);
+
+        printf("----");
+        for (int i = 0; i < nameLength; i++)
+            printf("-");
+        printf("----\n");
     } else {
         printf("Running: %s (00/%02d)", name, iteration);
         fflush(stdout);
@@ -105,13 +110,14 @@ struct benchmark_results benchmark(const char *name, benchmarkable f, size_t blo
         long ms = (long)(seconds * 1000);
 
         if (verbose) {
-            printf("%02.0lfs %03.0ldms |\n", seconds, ms % 1000);
+            printf("%02.0lfs %03ldms |\n", seconds, ms % 1000);
         }
 
         ms_results[i] = ms;
     }
 
-    printf("\n");
+    if (!verbose)
+        printf("\n");
 
     struct benchmark_results res = {
         .average_ms = 0,
@@ -132,7 +138,6 @@ struct benchmark_results benchmark(const char *name, benchmarkable f, size_t blo
 
     res.kilobytes_per_second = (1000 * (16*blocks) / res.average_ms) / 1024;
 
-    size_t nameLength = strlen(name);
     res.name = malloc(nameLength+1);
     memcpy(res.name, name, nameLength+1);
 

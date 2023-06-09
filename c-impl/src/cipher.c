@@ -1,8 +1,10 @@
+#include <assert.h>
+#include <byteswap.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
-#include <byteswap.h>
 
 #include "byte.h"
 #include "cipher.h"
@@ -325,7 +327,7 @@ void ExpandKey32(const byte key[32], byte output[KEY32_FULL_SIZE]) {
     }
 }
 
-int expandKeyAndGetRoundNumber(const byte key[], byte fullKey[], size_t keySize) {
+int expandKeyAndGetRoundNumber(const byte key[], byte fullKey[], short keySize) {
     switch (keySize) {
         case 16:
             ExpandKey16(key, fullKey);
@@ -343,105 +345,210 @@ int expandKeyAndGetRoundNumber(const byte key[], byte fullKey[], size_t keySize)
     }
 }
 
-void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize) {
-    if (dataSize % 16 == 0) {
-        // beware! static variables aren't an automatic speed-up!
-        // while they can speed-up some common functions by avoiding
-        // useless allocations, they might also impede data locality,
-        // thus leading to an overall slow-down because of cache misses
-        static byte tmp[4][4];
-        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], short keySize) {
+    assert (dataSize % 16 == 0);
 
-        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+    // beware! static variables aren't an automatic speed-up!
+    // while they can speed-up some common functions by avoiding
+    // useless allocations, they might also impede data locality,
+    // thus leading to an overall slow-down because of cache misses
+    static byte tmp[4][4];
+    static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
-        for (size_t i = 0; i < dataSize/16; i++) {
-            log("Encrypting block #%02ld", i+1);
-            linear_to_column_first_block(plaintext + i*16, tmp);
-            Cipher(tmp, fullKey, nr);
-            column_first_block_to_linear(tmp, ciphertext + i*16);
-        }
-    }
-    else {
-        printf("Data must a multiple of 16 bytes long!\n");
-        exit(1);
+    int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
+    for (size_t i = 0; i < dataSize/16; i++) {
+        log("Encrypting block #%02ld", i+1);
+        linear_to_column_first_block(plaintext + i*16, tmp);
+        Cipher(tmp, fullKey, nr);
+        column_first_block_to_linear(tmp, ciphertext + i*16);
     }
 }
 
-void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize) {
-    if (dataSize % 16 == 0) {
-        static byte tmp[4][4];
-        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], short keySize) {
+    assert(dataSize % 16 == 0);
 
-        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+    static byte tmp[4][4];
+    static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
-        for (size_t i = 0; i < dataSize/16; i++) {
-            log("Decrypting block #%02ld", i+1);
-            linear_to_column_first_block(ciphertext + i*16, tmp);
-            InverseCipher(tmp, fullKey, nr);
-            column_first_block_to_linear(tmp, plaintext + i*16);
-        }
-    }
-    else {
-        printf("Data must a multiple of 16 bytes long!\n");
-        exit(1);
+    int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+
+    for (size_t i = 0; i < dataSize/16; i++) {
+        log("Decrypting block #%02ld", i+1);
+        linear_to_column_first_block(ciphertext + i*16, tmp);
+        InverseCipher(tmp, fullKey, nr);
+        column_first_block_to_linear(tmp, plaintext + i*16);
     }
 }
 
-void encrypt_cbc(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], size_t keySize) {
-    if (dataSize % 16 == 0) {
-        static byte tmp[4][4];
-        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+void encrypt_cbc(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], short keySize) {
+    assert(dataSize % 16 == 0);
 
-        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+    const byte emptyBlock[16] = {0};
+    static byte tmp[4][4];
+    static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
-        byte lastBlock[4][4];
-        linear_to_column_first_block(key, lastBlock);
+    int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
 
-        for (size_t i = 0; i < dataSize/16; i++) {
-            log("Encrypting block #%02ld", i+1);
+    const byte *lastBlock = emptyBlock;
 
-            linear_to_column_first_block(plaintext + i*16, tmp);
+    for (size_t i = 0; i < dataSize/16; i++) {
+        log("Encrypting block #%02ld", i+1);
 
-            // we can just reuse AddRoundKey cause it's just an XOR
-            AddRoundKey(tmp, lastBlock);
+        linear_to_column_first_block(plaintext + i*16, tmp);
 
-            Cipher(tmp, fullKey, nr);
+        // we can just reuse AddRoundKey cause it's just an XOR
+        AddRoundKey(tmp, lastBlock);
 
-            column_first_block_to_linear(tmp, ciphertext + i*16);
-            linear_to_column_first_block(ciphertext + i*16, lastBlock);
-        }
-    }
-    else {
-        printf("Data must a multiple of 16 bytes long!\n");
-        exit(1);
+        Cipher(tmp, fullKey, nr);
+
+        column_first_block_to_linear(tmp, ciphertext + i*16);
+
+        lastBlock = ciphertext + i*16;
     }
 }
 
-void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], size_t keySize) {
-    if (dataSize % 16 == 0) {
-        static byte tmp[4][4];
-        static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
+void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, const byte key[], short keySize) {
+    assert(dataSize % 16 == 0);
 
-        int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
+    const byte emptyBlock[16] = {0};
+    static byte tmp[4][4];
+    static byte fullKey[KEY32_FULL_SIZE]; // worst case, doesn't take up too many extra bytes anyway
 
-        uint64_t *lastBlock = (uint64_t*)key;
+    int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
 
-        for (size_t i = 0; i < dataSize/16; i++) {
-            log("Decrypting block #%02ld", i+1);
+    const byte *lastBlock = emptyBlock;
 
-            linear_to_column_first_block(ciphertext + i*16, tmp);
+    for (size_t i = 0; i < dataSize/16; i++) {
+        log("Decrypting block #%02ld", i+1);
 
-            InverseCipher(tmp, fullKey, nr);
+        linear_to_column_first_block(ciphertext + i*16, tmp);
 
-            AddRoundKey(tmp, lastBlock);
+        InverseCipher(tmp, fullKey, nr);
 
-            column_first_block_to_linear(tmp, plaintext + i*16);
+        AddRoundKey(tmp, lastBlock); // equivalent to an XOR
 
-            lastBlock = (uint64_t*)ciphertext;
-        }
+        column_first_block_to_linear(tmp, plaintext + i*16);
+
+        lastBlock = ciphertext + i*16;
     }
-    else {
-        printf("Data must a multiple of 16 bytes long!\n");
-        exit(1);
+}
+
+void encrypt_aligned(
+    enum block_mode mode,
+    const byte plaintext[],
+    byte ciphertext[],
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+) {
+    switch (mode) {
+        case ECB_MODE:
+            encrypt_ecb(plaintext, ciphertext, dataSize, key, keySize);
+            return;
+        case CBC_MODE:
+            encrypt_cbc(plaintext, ciphertext, dataSize, key, keySize);
+            return;
+        default:
+            printf("encrypt() doesn't support block mode %d!\n", mode);
+            exit(1);
+            break;;
     }
+}
+
+void decrypt_aligned(
+    enum block_mode mode,
+    const byte ciphertext[],
+    byte plaintext[],
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+) {
+    switch (mode) {
+        case ECB_MODE:
+            decrypt_ecb(ciphertext, plaintext, dataSize, key, keySize);
+            break;
+        case CBC_MODE:
+            decrypt_cbc(ciphertext, plaintext, dataSize, key, keySize);
+            break;
+        default:
+            printf("decrypt() doesn't support block mode %d!\n", mode);
+            exit(1);
+            break;;
+    }
+}
+
+size_t encrypt(
+    enum block_mode mode,
+    const byte plaintext[],
+    byte *(ciphertext[]),
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+) {
+    short extraBytes = dataSize % 16;
+
+    // So... turns out we have to always add the size and pad anyway? ¯\_(ツ)_/¯
+    //
+    // if (extraBytes == 0) {
+    //     encrypt_aligned(mode, plaintext, ciphertext, dataSize, key, keySize);
+    //     return;
+    // }
+
+    // if adding the size at the start is going to roll over into another block
+    // we need to allocate and pad even more
+    short toPad
+        = extraBytes + 4 > 16
+        ? (16 - extraBytes) + 16 // original + semi-padded + extra
+        : 16 - extraBytes;       // original + padded
+
+    log("Data wasn't a multiple of 16 bytes! Need to pad by %d\n", toPad);
+
+    uint32_t padded_size = dataSize + toPad;
+    byte *padded_plaintext = malloc(padded_size);
+
+    // size
+    ((uint32_t*)padded_plaintext)[0] = dataSize;
+
+    // original data
+    memcpy(padded_plaintext + 4, plaintext, dataSize);
+
+    // final 0s
+    bzero(padded_plaintext + 4 + dataSize, toPad - 4); // compensate the size at the start
+
+    *ciphertext = malloc(padded_size);
+    encrypt_aligned(mode, padded_plaintext, *ciphertext, padded_size, key, keySize);
+
+    free(padded_plaintext);
+
+    return padded_size;
+}
+
+size_t decrypt(
+    enum block_mode mode,
+    const byte ciphertext[],
+    byte *(plaintext[]),
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+) {
+    byte *tmp_plaintext = malloc(dataSize);
+    log("Alloc'd plaintext @ %p\n", tmp_plaintext);
+
+    decrypt_aligned(mode, ciphertext, tmp_plaintext, dataSize, key, keySize);
+
+    uint32_t size = ((uint32_t*)tmp_plaintext)[0];
+
+    log("Decrypted to a size of %X bytes\n", size);
+
+    assert(size < dataSize);
+
+    byte *old_plaintext = tmp_plaintext;
+    tmp_plaintext = malloc(size);
+    memcpy(tmp_plaintext, old_plaintext+sizeof(uint32_t), size);
+    free(old_plaintext);
+
+    *plaintext = tmp_plaintext;
+
+    return size;
 }

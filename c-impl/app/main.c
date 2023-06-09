@@ -6,42 +6,32 @@
 #include "../src/cipher.h"
 #include "../src/utils.h"
 
-#include "../tests/utils.h"
-#include "file.h"
-
-void testEncryptFile(){
-    byte key[16] = {
-        0x2b, 0x7e, 0x15, 0X16,
-        0x28, 0xae, 0xd2, 0Xa6,
-        0xab, 0xf7, 0x15, 0X88,
-        0x09, 0xcf, 0x4f, 0X3c
-    };
-    printf("Encrypting & Decrypting a bitmap : \n");
-    modify_bitmap("app/transporteur.bmp","app/image_finale.bmp",key,16,'A');
-    modify_bitmap("app/image_finale.bmp","app/image_finale2.bmp",key,16,'B');
-}
+#define blocks 3
 
 int main(void) {
     srand(time(NULL));
 
-    const int blocks = 2;
+    uint8_t *dest;
+    uint8_t data[blocks*16] = {
+        0x00, 0x11, 0x22, 0x33,
+        0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb,
+        0xcc, 0xdd, 0xee, 0xff,
 
-    uint8_t dest[32];
-    uint8_t data[32] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
+        0x8e, 0xa2, 0xb7, 0xca,
+        0x51, 0x67, 0x45, 0xbf,
+        0xea, 0xfc, 0x49, 0x90,
+        0x4b, 0x49, 0x60, 0x89,
 
-        0xc6, 0xa1, 0x3b, 0x37,
-        0x87, 0x8f, 0x5b, 0x82,
-        0x6f, 0x4f, 0x81, 0x62,
-        0xa1, 0xc8, 0xd8, 0x79
+        0x01, 0x23, 0x45, 0x67,
+        0x89, 0xab, 0xcd, 0xef,
+        0xfe, 0xdc, 0xba, 0x98,
+        0x76,
     };
 
-    uint8_t key[24];
+    uint8_t key[32];
 
-    for(int i = 0; i < 24; i++)
+    for(int i = 0; i < 32; i++)
         key[i] = i; // rand();
 
     printf("Key:\n");
@@ -59,7 +49,7 @@ int main(void) {
         printf("--------------\n");
     }
 
-    encrypt_ecb(data, dest, blocks*16, key, 24);
+    size_t encryptedSize = encrypt(CBC_MODE, data, &dest, 45, key, 32);
 
     printf("\nResult:\n");
     for (int i = 0; i < blocks; i++) {
@@ -67,5 +57,19 @@ int main(void) {
         print_block(blk);
         printf("--------------\n");
     }
-    testEncryptFile();
+
+    byte *decrypted;
+
+    size_t decryptedSize = decrypt(CBC_MODE, dest, &decrypted, encryptedSize, key, 32);
+
+    printf("\nDecrypted:\n");
+    print_array(decrypted, decryptedSize);
+    // for (int i = 0; i < blocks; i++) {
+    //     linear_to_column_first_block(decrypted + i*16, blk);
+    //     print_block(blk);
+    //     printf("--------------\n");
+    // }
+
+    free(dest);
+    free(decrypted);
 }
