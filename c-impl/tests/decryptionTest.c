@@ -1,6 +1,9 @@
+#include "decryptionTest.h"
+
+#include <stdlib.h>
+
 #include "../src/cipher.h"
 
-#include "decryptionTest.h"
 #include "utils.h"
 
 #include<stdlib.h>

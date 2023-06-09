@@ -6,7 +6,7 @@
 #include "../src/byte.h"
 #include "../src/utils.h"
 
-#define check_block(res, exp) assert(eq_block(res, exp) || verif_vs_res_block(exp, res))
+#define check_block(res, exp) do { assert(eq_block(res, exp) || verif_vs_res_block(exp, res)); } while (0)
 #define check_array(res, exp, i) do {\
     if (!eq_array(res, exp, i)) {\
         printf("Expected:\n");\

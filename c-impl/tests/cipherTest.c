@@ -157,7 +157,7 @@ void testMixColumns() {
         {0xf1, 0xac, 0xa8, 0xe5}
     };
 
-    MixColumns(t2),
+    MixColumns(t2);
     check_block(t2, v2);
 
     ok();

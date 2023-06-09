@@ -7,7 +7,7 @@
 
 #ifdef VERBOSE
 #define log printf
-#define do_debug(a) a
+#define do_debug(a) do { a; } while(0)
 #else
 #define log
 #define do_debug(a)

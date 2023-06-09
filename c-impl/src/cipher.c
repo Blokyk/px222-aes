@@ -217,6 +217,13 @@ void SubWord(byte w[4]){
     }
 }
 
+// A note on ExpandKeyXX funcs: yes, we could have simply made *one*
+// function that took a key size and be done with it, but doing
+// micro- and macro-benchmarks revealed that manually "unrolling"
+// made them a lot more performant, and had better codegen, since
+// the compiler has a lot more knowledge about the situation than
+// in the generic case
+
 void ExpandKey16(const byte key[16], byte output[KEY16_FULL_SIZE]) {
     const int nk = 4;
 

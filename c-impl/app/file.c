@@ -14,9 +14,6 @@
 
 #include "bitmap.h"
 
-#define BUFFER_SIZE 4096
-
-// maybe the file isn't found?
 void handle_fopen_error(const FILE *src, const char *filename) {
     if (src == NULL) {
         printf("Couldn't open '%s': %s (errno %d)\n", filename, strerror(errno), errno);

@@ -1,8 +1,11 @@
+#include "encryptionTest.h"
+
+#include <stdlib.h>
+
 #include "../src/byte.h"
 #include "../src/cipher.h"
 #include "../src/utils.h"
 
-#include "encryptionTest.h"
 #include "utils.h"
 
 #include<stdlib.h>
