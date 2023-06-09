@@ -16,6 +16,7 @@
 
 #define BUFFER_SIZE 4096
 
+// maybe the file isn't found?
 void handle_fopen_error(const FILE *src, const char *filename) {
     if (src == NULL) {
         printf("Couldn't open '%s': %s (errno %d)\n", filename, strerror(errno), errno);
@@ -55,6 +56,7 @@ typedef size_t cipherFunc(
     short keySize
 );
 
+// the two following functions aim to prepare the cipher of a bitmap
 void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
     FILE *src = fopen(filename, "rb");
     handle_fopen_error(src, filename);

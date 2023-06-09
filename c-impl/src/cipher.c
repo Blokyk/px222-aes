@@ -79,6 +79,8 @@ void AddRoundKey(byte data[4][4], const byte key[16]) {
     }
 }
 
+//SubBytes transformation is just taking a byte and applicate it to the Sbox; as the Sbox is a linear array, the byte contained in state[i][j] is
+//the index in hexadecimal of the substituing byte.
 void SubBytes(byte state[4][4]) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
@@ -99,7 +101,8 @@ void ShiftRows(byte state[4][4]) {
         *((uint32_t*)state[i]) = ROR(asWord, 8*i);
     }
 }
-
+// we recognized a pattern alternating for mixcolumns : it's always multiply one term by 2, one by 3, and two by 1, then xor everything.
+// Needed to make an intermediate variable to help modify the columns, then copy it.
 void MixColumns(byte data[4][4]){
     static byte tmp[4][4];
     for (int i = 0 ; i<4 ; i++) {
@@ -174,6 +177,7 @@ void InverseCipher(byte data[4][4], const byte key[], int nr) {
     do_debug(print_block(data));
 }
 
+// as SubBytes, with the Inverse table
 void InvSubBytes(byte data[4][4]) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
@@ -206,7 +210,7 @@ void InvMixColumns(byte data[4][4]) {
         }
     }
 }
-
+// as SubBytes
 void SubWord(byte w[4]){
     for (int i = 0; i < 4; i++) {
         w[i] = Sbox[w[i]];
@@ -434,6 +438,7 @@ void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, con
         lastBlock = ciphertext + i*16;
     }
 }
+
 
 void encrypt_aligned(
     enum block_mode mode,

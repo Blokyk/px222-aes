@@ -13,15 +13,6 @@ void testExpandKey16() {
     byte o1[KEY16_FULL_SIZE];
 
     ExpandKey16(k1, o1);
-
-    // for (int i = 0; i < KEY16_FULL_SIZE; i++) {
-    //     if (i % 4 == 0)
-    //         printf("\n");
-    //     if (i % 16 == 0)
-    //         printf("--------\n");
-    //     printf("%02x", o1[i]);
-    // }
-
     assert(
            o1[KEY16_FULL_SIZE-4] == 0xb6
         && o1[KEY16_FULL_SIZE-3] == 0x63
