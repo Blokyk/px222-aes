@@ -7,6 +7,15 @@
 #include "../src/utils.h"
 
 #define check_block(res, exp) assert(eq_block(res, exp) || verif_vs_res_block(exp, res))
+#define check_array(res, exp, i) do {\
+    if (!eq_array(res, exp, i)) {\
+        printf("Expected:\n");\
+        print_array(exp, i);\
+        printf("But got:\n");\
+        print_array(res, i);\
+        assert(eq_array(res, exp, i));\
+    }\
+} while (0)
 
 void ok();
 

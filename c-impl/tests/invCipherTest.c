@@ -3,33 +3,6 @@
 #include "invCipherTest.h"
 #include "utils.h"
 
-void testDecryptECB() {
-    printf("TEST: Decrypt (ECB-128) ");
-
-
-    byte d1[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-
-    byte k1[16] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-    };
-
-    byte ciphertext[16];
-    byte plaintext[16];
-
-    encrypt_ecb(d1, ciphertext, 16, k1, 16);
-    decrypt_ecb(ciphertext, plaintext, 16, k1, 16);
-
-    if (!eq_array(plaintext, d1, 16)) {
-        printf("Expected:\n");
-        print_array(d1, 16);
-        printf("But got:\n");
-        print_array(plaintext, 16);
-        assert(eq_array(plaintext, d1, 16));
-    }
-
-    ok();
-}
-
 void testInverseCipher() {
     printf("TEST: InverseCipher... \t");
 
@@ -56,8 +29,6 @@ void testInverseCipher() {
 
     Cipher(s1, fk1, 10);
     InverseCipher(s1, fk1, 10);
-
-    byte tmp1[16];
 
     check_block(s1, originalBlock);
 
