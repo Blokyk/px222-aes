@@ -40,7 +40,9 @@ void ExpandKey32(const byte key[32], byte output[KEY32_FULL_SIZE]) ;
 // void encrypt_aligned(enum block_mode mode, const byte plaintext[], byte ciphertext[], uint32_t dataSize, const byte key[], size_t keySize);
 // void decrypt_aligned(enum block_mode mode, const byte ciphertext[], byte plaintext[], uint32_t dataSize, const byte key[], size_t keySize);
 
+__attribute_warn_unused_result__
 size_t encrypt(enum block_mode mode, const byte plaintext[], byte *(ciphertext[]), uint32_t dataSize, const byte key[], short keySize);
+__attribute_warn_unused_result__
 size_t decrypt(enum block_mode mode, const byte ciphertext[], byte *(plaintext[]), uint32_t dataSize, const byte key[], short keySize);
 
 void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, const byte key[], short keySize);

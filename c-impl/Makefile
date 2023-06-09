@@ -17,19 +17,19 @@ LIB_BIN = $(BIN_DIR)/quickaest.so
 APP_SRC := $(wildcard app/*.c)
 APP_OBJS = $(OBJS)
 APP_OBJS+= $(addprefix $(OBJ_DIR)/, $(APP_SRC:.c=.o))
-APP_DEPS+= $(APP_OBJS:.o=.d)
-APP_EXEC = $(BIN_DIR)/main
+APP_DEPS = $(APP_OBJS:.o=.d)
+APP_EXEC = $(BIN_DIR)/app
 
 BENCH_SRC := $(wildcard bench/*.c)
 BENCH_OBJS = $(OBJS)
 BENCH_OBJS+= $(addprefix $(OBJ_DIR)/, $(BENCH_SRC:.c=.o))
-BENCH_DEPS+= $(BENCH_OBJS:.o=.d)
+BENCH_DEPS = $(BENCH_OBJS:.o=.d)
 BENCH_EXEC = $(BIN_DIR)/bench
 
 TEST_SRC := $(wildcard tests/*.c)
 TEST_OBJS = $(OBJS)
 TEST_OBJS+= $(addprefix $(OBJ_DIR)/, $(TEST_SRC:.c=.o))
-TEST_DEPS+= $(TEST_OBJS:.o=.d)
+TEST_DEPS = $(TEST_OBJS:.o=.d)
 TEST_EXEC = $(BIN_DIR)/run-tests
 
 help:
@@ -66,9 +66,12 @@ help:
 	@echo '  VERBOSE    -- prints a bunch of debug info, like the state for every step'
 	@echo '                of encryption/decryption'
 
-build-all: build-bench build-lib build-app build-test
+# this doesn't build the benchmarks because those require cleaning & recompiling everything
+# and since in theory there's no guarantee dependencies will be fulfilled, there's no way to
+# ensure it's ran first or sequentially with the others
+build-all: build-lib build-app build-test | $(BIN_DIR) $(OBJ_DIR)
 
-build-lib: $(OBJS) | $(BIN_DIR)
+build-lib: $(OBJS) | $(BIN_DIR) $(OBJ_DIR)
 #	$(CC) -c -o $(LIB_BIN) $^ $(LDFLAGS)
 
 build-app: $(APP_OBJS) | build-lib
@@ -78,10 +81,10 @@ build-bench: clean | build-bench_
 
 build-bench_: LDFLAGS = -Ofast -march=native -flto
 build-bench_: CFLAGS = $(WARNS) $(NO_WARNS) -Ofast -march=native -flto -fshort-enums
-build-bench_: $(BENCH_OBJS)
+build-bench_: $(BENCH_OBJS) | $(BIN_DIR)
 	$(CC) -o $(BENCH_EXEC) $^ $(LDFLAGS)
 
-build-test: $(TEST_OBJS) | build-debug
+build-test: $(TEST_OBJS) | build-debug $(BIN_DIR)
 	$(CC) -o $(TEST_EXEC) $^ $(LDFLAGS)
 
 run: build-app
@@ -100,19 +103,24 @@ app : build-app
 	@./$(APP_EXEC)
 
 build-debug: CFLAGS += -DDEBUG
-build-debug: build-lib
+build-debug: build-app
 
 debug: build-debug
 	@ASAN_OPTIONS="detect_leaks=0" gdb ./$(APP_EXEC)
 
 clean:
-	rm -rf $(OBJ_DIR) $(OBJS) $(DEPS) $(APP_OBJS) $(APP_DEPS) $(APP_EXEC) $(BENCH_DEPS) $(BENCH_EXEC) $(TEST_OBJS) $(TEST_DEPS) $(TEST_EXEC)
+	rm -rf $(BIN_DIR) $(OBJ_DIR)
 
--include $(DEPS) # import auto-gen'd dependencies
--include $(TEST_DEPS) # import auto-gen'd dependencies
+# import auto-gen'd dependencies
+-include $(DEPS)
+-include $(APP_DEPS)
+-include $(BENCH_DEPS)
+-include $(TEST_DEPS)
 
 # shamelessly stolen from http://scottmcpeak.com/autodepend/autodepend.html
-$(OBJ_DIR)/%.o: %.c | $(OBJ_DIR) # the '| $(OBJ_DIR)' thing makes sure the dir exists
+# basically, uses a compiler feature that auto-generates dependency info
+# to compile any .c file included in the project
+$(OBJ_DIR)/%.o: %.c | $(OBJ_DIR) # '| $(OBJ_DIR)' makes sure the dir exists
 	$(CC) -c  $(CFLAGS) $*.c -o $(OBJ_DIR)/$*.o
 	$(CC) -MM $(CFLAGS) $*.c > $(OBJ_DIR)/$*.d
 	@mv -f $(OBJ_DIR)/$*.d $(OBJ_DIR)/$*.d.tmp

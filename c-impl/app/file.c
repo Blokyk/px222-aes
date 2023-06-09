@@ -61,6 +61,12 @@ void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFi
     struct stat srcInfo;
     fstat(fileno(src), &srcInfo);
 
+    if (srcInfo.st_size >= MAX_UNBUFFERED_SIZE) { // -20 for size + padding
+        printf("'%s' is too big (%ld) to be processed, must be %d bytes at most. Use --buffered instead", filename, srcInfo.st_size, MAX_UNBUFFERED_SIZE);
+        exit(1);
+        return;
+    }
+
     FILE *dest = prepare_bitmap(src, destFilename);
 
     size_t bytesRead, bytesProcessed;
@@ -78,6 +84,7 @@ void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFi
     bytesProcessed = f(mode, srcBuffer, &dstBuffer, bytesRead, key, keySize);
 
     fwrite(dstBuffer, 1, bytesProcessed, dest);
+    printf("Data was %ld bytes long, wrote %ld bytes to dest\n", bytesRead, bytesProcessed);
 
     fclose(src);
     fclose(dest);
@@ -96,17 +103,18 @@ void __cipher_bitmap_core_buffered(cipherFunc f, const char *filename, const cha
     static byte srcBuffer[BUFFER_SIZE];
     byte *dstBuffer = NULL;
 
-    while ((bytesRead = fread(srcBuffer, 1, BUFFER_SIZE, src)) != 0) {
+    // fixme: why this is not working: when encrypting, we'll read 4096 bytes, but output
+    //        e.g. 5016; when decrypting, we'll actually need to read all 5016 bytes at
+    //        once if we want the decryption to go okay; except this contradicts the points
+    //        of having a function that just takes a func pointer lol
+    while ((bytesRead = fread(srcBuffer, 1, BUFFER_SIZE - 4, src)) != 0) {
         bytesProcessed = f(mode, srcBuffer, &dstBuffer, bytesRead, key, keySize);
         fwrite(dstBuffer, 1, bytesProcessed, dest);
+        free(dstBuffer);
     }
 
     fclose(src);
     fclose(dest);
-
-    // the file might just be empty, who knows? ¯\_(ツ)_/¯
-    if (dstBuffer != NULL)
-        free(dstBuffer);
 }
 
 void encrypt_bitmap(const char *srcFilename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {

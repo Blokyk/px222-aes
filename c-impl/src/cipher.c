@@ -491,7 +491,6 @@ void decrypt_aligned(
     }
 }
 
-__attribute_warn_unused_result__
 size_t encrypt(
     enum block_mode mode,
     const byte plaintext[],
@@ -500,6 +499,16 @@ size_t encrypt(
     const byte key[],
     short keySize
 ) {
+    // todo: we don't actually *have* to malloc anything here, i just ran out of time+energy
+    //       what we could actually do is only copy the first 12 (=16-4) bytes of data and
+    //       prepend the size to that, encrypt it as the first block, and then have another
+    //       wrapper/function that takes care of padding for us, this way we avoid any dynamic
+    //       allocation in the cipher (which would "escape" to the client and become their
+    //       responsibility despite not having requested any dynamic stuff AND having potentially
+    //       passed a buffer themselves -- bad API design if you ask me!)
+    //       i'm too tired to figure out if/how this would also avoid malloc's for decryption,
+    //       but it's definitely a positive change in any case
+
     short extraBytes = dataSize % 16;
 
     // So... turns out we have to always add the size and pad anyway? ¯\_(ツ)_/¯
@@ -551,7 +560,6 @@ size_t encrypt(
     return padded_size;
 }
 
-__attribute_warn_unused_result__
 size_t decrypt(
     enum block_mode mode,
     const byte ciphertext[],
@@ -567,7 +575,7 @@ size_t decrypt(
 
     uint32_t size = ((uint32_t*)tmp_plaintext)[0];
 
-    log("Decrypted to a size of %X bytes\n", size);
+    printf("Decrypted to a size of %u (0x%X) bytes\n", size, size);
 
     assert(size < dataSize);
 

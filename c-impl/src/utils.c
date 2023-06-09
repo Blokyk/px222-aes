@@ -24,6 +24,13 @@ void print_array(const byte a[], size_t n) {
     printf("]\n");
 }
 
+void print_hex_array(const byte a[], size_t n) {
+    printf("0x");
+    for (size_t i = 0; i < n; i++) {
+        printf("%02x", a[i]);
+    }
+}
+
 // { 0, 1, 2, 3, ... } = { { 0, ... }, { 1, ... }, { 2, ... }, { 3, ... }}
 void linear_to_column_first_block(const byte line[16], byte blk[4][4]) {
     for (int i = 0; i < 4; i++) {

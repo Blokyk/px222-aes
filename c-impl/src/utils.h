@@ -18,5 +18,6 @@
 
 void print_block(const byte blk[4][4]);
 void print_array(const byte a[], size_t n);
+void print_hex_array(const byte a[], size_t n);
 void linear_to_column_first_block(const byte line[16], byte blk[4][4]);
 void column_first_block_to_linear(const byte blk[4][4], byte line[16]);

@@ -24,7 +24,7 @@ void display_help(const char *appname) {
     printf("  -o, --output <filename.bmp>    Filename for the output image [default: input-enc/-dec.bmp]\n");
     printf("  -m, --mode <ECB | CBC>         Uses the given block mode for the cipher (case insensitive)\n");
     printf("  -k, --key <hex-bytes>          Specifies the key to use, written in hexadecimal\n");
-    printf("  -s, --key-size <size>          Use a random key of size: 16 bytes (128 bits), 24 bytes (192 bits) or 32 bytes (256 bits)\n");
+    printf("  -s, --key-size <size>          Use a random key of size: 16 bytes (128 bits), 24 bytes (192 bits) or 32 bytes (256 bits). Incompatible with --decrypt\n");
     printf("  -b, --buffered                 Process the file in chunks of %d bytes of trying do the whole file at once (recommended for large files)\n", BUFFER_SIZE);
 }
 
@@ -38,10 +38,10 @@ bool __pop_argv(int *argc, const char *(*argv[]), const char **curr_arg) {
         return false;
     }
 
-    (*argc)--;
-    (*argv)++;
+    (*argc) -= 1;
+    (*argv) += 1;
 
-    if (argc == 0) {
+    if (*argc == 0) {
         return false;
     } else {
         *curr_arg = (*argv)[0];
@@ -52,7 +52,7 @@ bool __pop_argv(int *argc, const char *(*argv[]), const char **curr_arg) {
 #define in_argv(str) __in_argv(str, argv, argc)
 bool __in_argv(const char *key, const char *argv[], int argc) {
     for (int i = 0; i < argc; i++) {
-        if (strcmp(key, argv[i]))
+        if (strcmp(key, argv[i]) == 0)
             return true;
     }
 
@@ -127,12 +127,17 @@ __attribute_warn_unused_result__
 char *getDestinationFilename(const char *srcFilename, bool decrypt) {
     size_t filenameLength = strlen(srcFilename);
 
-    char *destFilename = malloc(filenameLength + 5); // "-enc" + \0
+    size_t newNameLength = filenameLength + 5; // "-enc" + \0
+
+    char *destFilename = malloc(newNameLength); // "-enc" + \0
+
     strncpy(destFilename, srcFilename, filenameLength - 4);
+    destFilename[filenameLength - 4] = '\0'; // we need to append the null byte
+
     if (decrypt) {
-        strncat(destFilename, "-enc.bmp", 5);
+        strcat(destFilename, "-dec.bmp");
     } else {
-        strncat(destFilename, "-enc.bmp", 5);
+        strcat(destFilename, "-enc.bmp");
     }
 
     return destFilename;
@@ -146,11 +151,11 @@ uint8_t decode_digit(char c) {
 
     char cl = c | 0x20;
 
-    if (0x62 <= cl && cl <= 0x68) {
-        return (cl & 0xf);
+    if (0x61 <= cl && cl <= 0x70) {
+        return ((cl - 1) & 0xf) + 10;
     }
 
-    printf("Couldn't interpret character '%c' (0x%x) as an hexadecimal digit", c, c);
+    printf("Couldn't interpret character '%c' (0x%x) as an hexadecimal digit\n", c, c);
     exit(1);
     return -1;
 }
@@ -159,39 +164,43 @@ __attribute_warn_unused_result__
 short decode_key(const char *strKey, uint8_t key[]) {
     size_t strKeySize = strlen(strKey);
 
-    short keySize;
+    int i = 0;
 
-    // we switch on (strKeySize+1)/2 instead of just strKeySize
+    // if the user added an hex prefix, ignore it
+    if (strKeySize >= 2 && strKey[0] == '0' && strKey[1] == 'x') {
+        // skip the first two characters;
+        strKey += 2;
+        strKeySize -= 2;
+    }
+
+    // we use (strKeySize+1)/2 instead of just strKeySize
     // cause we want to include odd-number-of-digits cases,
     // this way 31 digits will be seen as 32, 47 as 48, and 63 as 64
-    switch ((strKeySize + 1) / 2) {
+    short keySize = (strKeySize + 1) / 2;
+    switch (keySize) {
         case 16:
         case 24:
         case 32:
-            keySize = (strKeySize + 1) / 2;
             break;
         default:
-            printf(MSG_WRONG_KEY_SIZE, (strKeySize + 1) / 2);
+            printf(MSG_WRONG_KEY_SIZE, (long)keySize);
             exit(1);
             return -1;
     }
 
-    int i = 0;
-
-    // if the user added an hex prefix, ignore it
-    if (strKey[0] == '0' && strKey[1] == 'x') {
-        i += 2;
-    }
-
     // if there's an odd number of digits, then we need to pretend there's a zero at the start
     if (strKeySize % 2 == 1) {
-        key[0] = decode_digit(strKey[1]);
+        key[0] = decode_digit(strKey[0]);
         i++;
     }
 
     for (; i < keySize; i++) {
         key[i] = (decode_digit(strKey[i*2]) << 4) | (decode_digit(strKey[i*2+1]));
     }
+
+    log("Decoded '%s' into ", strKey);
+    do_debug(print_hex_array(key, keySize));
+    log("\n");
 
     return keySize;
 }
@@ -204,10 +213,7 @@ int main(int argc, const char *argv[]) {
         return 0;
     }
 
-    const char *curr_arg = argv[0];
-    pop_argv(""); // ignore binary name
-
-    if (argc <= 0) {
+    if (argc <= 1) {
         demo();
         return 0;
     }
@@ -222,10 +228,10 @@ int main(int argc, const char *argv[]) {
     short keySize = 0;
     uint8_t key[32];
 
-    bool buffered, decrypt;
+    bool buffered = false, decrypt = false;
 
-    while (try_pop_argv()) {
-
+    const char *curr_arg = argv[0];
+    while (try_pop_argv()) { // we call it directly cause the first one is the app name, which we'll ignore anyway
         if (strcmp("-d", curr_arg) == 0 || strcmp("--decrypt", curr_arg) == 0) {
             decrypt = true;
             continue;
@@ -240,7 +246,7 @@ int main(int argc, const char *argv[]) {
                 return 1;
             }
 
-            customDest = false;
+            customDest = true;
             dest = (char*)curr_arg; // discard const
             continue;
         }
@@ -332,7 +338,22 @@ int main(int argc, const char *argv[]) {
         src = curr_arg;
     }
 
-    if (!useRandomKey && keySize == 0) {}
+    if (!useRandomKey && keySize == 0) {
+        if (decrypt) {
+            printf("You must specify a decryption key using --key\n");
+        } else {
+            printf("You must either specify a --key or generate a random one with --key-size\n");
+        }
+
+        exit(1);
+        return 1;
+    }
+
+    if (useRandomKey && decrypt) {
+        printf("The '--key-size' option to generate a random cannot be used with '--decrypt'\n");
+        exit(1);
+        return 1;
+    }
 
     size_t filenameLength = strlen(src);
     if (filenameLength < 5 && strcmp(src + filenameLength - 4, ".bmp") != 0) {
@@ -342,12 +363,27 @@ int main(int argc, const char *argv[]) {
     }
 
     if (useRandomKey) {
+        printf("Using random key because s was specified!\n");
         for(int i = 0; i < keySize; i++) key[i] = rand();
     }
 
     if (dest == NULL) {
         dest = getDestinationFilename(src, decrypt);
     }
+
+    if (decrypt) {
+        printf("Decrypting ");
+    } else {
+        printf("Encrypting ");
+    }
+    printf("'%s' into '%s' ", src, dest);
+    printf("using AES-%d-%s ", keySize * 8, mode == ECB_MODE ? "ECB" : "CBC");
+    printf("with key=");
+    print_hex_array(key, keySize);
+    if (buffered) {
+        printf(" (buffered)");
+    }
+    printf("\n");
 
     if (buffered)
         if (decrypt)
