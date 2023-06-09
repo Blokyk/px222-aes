@@ -5,6 +5,7 @@
 #include "encryptionTest.h"
 #include "utils.h"
 
+#include<stdlib.h>
 void testEncryptECB128() {
     printf("TEST: Encrypt (ECB-128) ");
 

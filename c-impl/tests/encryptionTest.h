@@ -5,3 +5,5 @@ void testEncryptECB256();
 void testEncryptCBC128();
 void testEncryptCBC192();
 void testEncryptCBC256();
+
+void testEncryptUnaligned();

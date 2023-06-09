@@ -3,6 +3,8 @@
 #include "decryptionTest.h"
 #include "utils.h"
 
+#include<stdlib.h>
+
 void testDecryptECB128() {
     printf("TEST: Decrypt (ECB-128) ");
 

@@ -305,37 +305,110 @@ Zoë:
   - [x] implémenter le Cipher et ses différentes fonctions
   - [x] écriture des tests
 
-## Notes de séances
-Nous avons d'abord choisi le type de nos States et Cipher ; c'était un vrai choix technique . Nous avons donc commencé par des ``` unsigned int ``` mais avons finalement préféré le  type ``` byte ``` plus pratique pour nos manipulations.
+## Notes de séance
+Nous avons d'abord choisi le type de nos States et Cipher ; c'était un vrai choix technique .
+Nous avons donc commencé par des ``` unsigned int ``` mais avons finalement préféré le
+type ``` byte ``` qui est une redéfinition du type ```uint8_t```, plus pratique pour nos manipulations.
 Nous avons rencontré des difficultés à implémenter SubBytes et ShiftRows .
-Commencement du make file.
+Début du make file : c'est une version encore assez "simple", comme vue en cours lors du premier Semestre.
+
+## Rétrospective
+
+Les fonctions du Cipher furent plus longues à écrire que prévu, notamment `ShiftRow` qui fut par la suite simplifiée.
+
 
 # Séance 7 -- 06/06/2023
 
 ## Objectifs
 
 Commun:
-  - [ ] Finir les fonctions du Cipher
-  - [ ] Continuer de remplir le carnet de bord
-  - [ ] Réfléchir / commencer l'inversion
+  - [x] Finir les fonctions du Cipher
+  - [x] Continuer de remplir le carnet de bord
+  - [x] Réfléchir / commencer l'inversion
 
 Léa:
-  - [ ] Implémenter MixColumns et AddRoundKey
-  - [ ] Coder le Cipher
+  - [x] Implémenter MixColumns et AddRoundKey
+  - [x] Coder le Cipher
 
 Zoë:
   - [x] vaincre le Makefile
   - [x] Organiser les tests
+
+## Notes de séance
+
+Nous avons passé une bonne partie de la séance sur les fonctions du Cipher et sur le Makefile.
+Dorénavant, le Makefile est beaucoup plus complet, au contraire de la première version produite.
+Il est quasiment automatique et donc beaucoup plus pratique.
+Les tests furent plus rapides à écrire, et nous avons associées quelques fonctions dans le fichier "Utils.c"
+qui permettent de rendre le test en lui-même beaucoup plus simple à écrire et plus lisible ( ```check_block```, ```ok()```... ).
+De même, le Cipher ne prit pas beaucoup de temps, grâce au pseudo code fourni par la spec.
+
+## Retrospective
+Il fut difficile de coder MixColumns et AddRoundKey ,parce que ça générait
+des erreurs de types qui furent longues à débugger.
+Nous aurions pu passer moins de temps sur les fonctions d'expansion de clé, en étant plus attentive aux fichiers liés entre eux.
+Certaines erreurs ont été générées par les différences de déclaration de fonctions entre les fichiers `.c` et `.h`.
+Cette erreur n'est certes pas chronophage, mais reste néanmoins perturbante, et agaçante.
 
 # Séance 8 -- 07/06/2023
 
 ## Objectifs
 
 Commun:
-  - [ ] Finir cipher inverse
+  - [x] Finir cipher inverse
+  - [x] Encryption EBC/CBC
 
 Léa:
-  - [ ] a
+  - [x] Implémenter les expansions de clés, et les tester
+  - [x] Encryption EBC
 
 Zoë:
-  - [ ] a
+  - [x] Optimiser le code et augmenter sa performance
+  - [x] Corriger l'encryption EBC
+
+## Notes de séance
+
+Bien que relativement simples,(surtout après que Zoë ait écrit l'expansion de la clé pour 128 bits),
+les expansions de clés 192 et 256 et l'écriture de leurs tests associés furent plutôt longues,
+surtout l'expansion de 256, qui nécessitait une opération supplémentaire lorsque une certaine variable i
+était multiple de la variable Nk.
+
+Au niveau de l'optimisation du code, nous sommes passées de 12 Mo/s à 70 Mo/s.
+
+## Rétrospective
+L'encryption EBC fonctionnait pour des blocs de 16 octets, mais la boucle qui aurait dû permettre de chiffrer des blocs plus longs ne fonctionnait pas.
+En ce qui concerne l'optimisation du code , Zoë tenait dès le départ à écrire des fonctions rapides et efficaces;
+puis elle a amélioré le code en fixant des variables à l'aide de `const`.Cet arrangement permettait de ne pas solliciter constamment un accès à des
+nouveaux espaces modifiables, mais simplement un accès mémoire.
+De plus, nous n'avons pas implémenté la multiplication de polynômes,et même si on perd en localité(taille de la mémoire), on gagne sur l'efficacité du code.
+Enfin, nous avons désactivé Adress Sanitizer pour les benchmarks, et en ne le sollicitant plus, nous avons optimisé la compilation.
+
+# Séance 9 -- 08/06/2023
+
+## Objectifs
+
+Commun :
+  - [x] finaliser propre les encryptions/décryptions
+  - [x] permettre le chiffrage de blocs plus longs que 16 bits/ fichiers/ images
+
+Léa :
+  - [x] lecture /chiffrement de fichier
+  - [x] mise à jour du Carnet de Bord
+  - [x] Ecriture de tests
+
+Zoë :
+  - [x] fonction de padding
+  - [x] ecriture de tests
+
+## Notes de séance
+La fonction de padding fut difficile à écrire.
+La lecture du fichier n'était pas difficile en elle-même , mais l'encryption du fichier
+était rendue ardue parce que nous n'allouions pas assez d'espace pour crypter le fichier
+complet. De plus, la fonction de padding n'étant pas encore écrite ,
+il était difficile de gérer des fichiers dont la taille n'était pas multiple de 16.
+
+## Rétrospective
+
+La fonction de padding était compliquée dans le sens où elle devait se plier à un cahier des charges contraignant, et se faisant, et différente du reste de la librairie : car le reste ne fait pas d'allocation dynamique .
+Pour la fonction de padding nous étions contraintes de déplacer de potentiellement gros blocs de mémoire juste pour mettre quatre bytes au début.
+C'est la fonction la plus "dangereuse".
