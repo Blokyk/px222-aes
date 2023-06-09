@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <byteswap.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -478,6 +479,7 @@ void decrypt_aligned(
     }
 }
 
+__attribute_warn_unused_result__
 size_t encrypt(
     enum block_mode mode,
     const byte plaintext[],
@@ -507,6 +509,12 @@ size_t encrypt(
     uint32_t padded_size = dataSize + toPad;
     byte *padded_plaintext = malloc(padded_size);
 
+    if (padded_plaintext == NULL) {
+        printf("Couldn't allocate buffer of %u bytes for plaintext buffer!\n", padded_size);
+        exit(ENOMEM);
+        return -1;
+    }
+
     // size
     ((uint32_t*)padded_plaintext)[0] = dataSize;
 
@@ -517,6 +525,13 @@ size_t encrypt(
     bzero(padded_plaintext + 4 + dataSize, toPad - 4); // compensate the size at the start
 
     *ciphertext = malloc(padded_size);
+
+    if (*ciphertext == NULL) {
+        printf("Couldn't allocate buffer of %u bytes for ciphertext buffer!\n", padded_size);
+        exit(ENOMEM);
+        return -1;
+    }
+
     encrypt_aligned(mode, padded_plaintext, *ciphertext, padded_size, key, keySize);
 
     free(padded_plaintext);
@@ -524,6 +539,7 @@ size_t encrypt(
     return padded_size;
 }
 
+__attribute_warn_unused_result__
 size_t decrypt(
     enum block_mode mode,
     const byte ciphertext[],

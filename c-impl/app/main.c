@@ -1,14 +1,42 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#include "../src/cipher.h"
-#include "../src/utils.h"
+#include "file.h"
 
 #define blocks 3
 
+__attribute_warn_unused_result__
+char *getDestinationFilename(const char *srcFilename) {
+    size_t filenameLength = strlen(srcFilename);
+    if (filenameLength < 5 && strcmp(srcFilename + filenameLength - 4, ".bmp") != 0) {
+        printf("File must be a .bmp image!\n");
+        exit(1);
+    }
+
+    char *destFilename = malloc(filenameLength + 5); // "-enc" + \0
+    strncpy(destFilename, srcFilename, filenameLength - 4);
+    strncat(destFilename, "-enc.bmp", 5);
+
+    return destFilename;
+}
+
 int main(void) {
+    srand(time(NULL));
+    uint8_t key[32];
+
+    for(int i = 0; i < 32; i++)
+        key[i] = rand();
+
+    printf("Encrypting tux-clear.bmp...\n");
+    encrypt_bitmap("tux-clear.bmp", "tux-enc.bmp", CBC_MODE, key, 32);
+    printf("Done!\n");
+
+    return 0;
+
+    /*
     srand(time(NULL));
 
     uint8_t *dest;
@@ -71,5 +99,5 @@ int main(void) {
     // }
 
     free(dest);
-    free(decrypted);
+    free(decrypted);*/
 }

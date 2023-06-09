@@ -1,59 +1,127 @@
 #include "file.h"
 
-#include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "../src/utils.h"
+
 #include "../src/cipher.h"
 
-int modify_bitmap(char str[],char str2[],byte key[],size_t keySize,char way){
-    printf("debuting\n");
-    FILE * fc;
-    FILE * ff; // initialise le fichier final
-    fc = fopen(str,"r");
-    if (fc== NULL) return;
-    ff = fopen(str2,"w+");
-    fichierEntete entete2;
-    fread(&entete2,1,sizeof(entete2),fc);
-    imageEntete image2;
-    fread(&image2,1,sizeof(image2),fc);
-    fseek(fc,entete2.offset,SEEK_SET); // copier l'entête dans ff
-    struct stat buf;
-    fstat(fc->_fileno, &buf);
-    printf("%ld\n",buf.st_size);
-    int a = buf.st_size+14;
-    printf("%d\n",a);
-    byte block= malloc(a);
-    for (int i=1; i<15 ; i++){
-        int x = buf.st_size+14-i;
-        byte block[x] = 0x00;
-    }
-    fread(block,buf.st_size,buf.st_size,fc) ;
-    byte tmp[16];
-    switch(way){
-        case 'A' :
-            encrypt_ecb(block,tmp,a,key,keySize);
-            break;
-        case 'B' :
-            decrypt_ecb(block,tmp,buf.st_size,key,keySize);
-            break;
-        case 'C' :
-            encrypt_cbc(block,tmp,buf.st_size,key,keySize);
-            break;
-        case 'D' :
-            decrypt_cbc(block,tmp,buf.st_size,key,keySize);
-            break;
-        default  :
-            printf("Not an option, choose otherwise! \n");
-            exit(1);
-            return -1;
+#include "bitmap.h"
 
+#define BUFFER_SIZE 4096
+
+void handle_fopen_error(const FILE *src, const char *filename) {
+    if (src == NULL) {
+        printf("Couldn't open '%s': %s (errno %d)\n", filename, strerror(errno), errno);
+        exit(errno);
+        return;
     }
-    fwrite(tmp,buf.st_size,1,ff); //on écrit dans le fichier final
-    fclose(fc);
-    fclose(ff);
-    return 1;
+}
+
+__attribute_warn_unused_result__
+FILE* prepare_bitmap(FILE *src, const char *destFilename) {
+    FILE *dest;
+
+    dest = fopen(destFilename,"wb+");
+    handle_fopen_error(dest, destFilename);
+
+    fichierEntete fileHeader;
+    fread(&fileHeader, sizeof(fileHeader), 1, src);
+    fwrite(&fileHeader, sizeof(fileHeader), 1, dest);
+
+    imageEntete imgHeader;
+    fread(&imgHeader, sizeof(imgHeader), 1, src);
+    fwrite(&imgHeader, sizeof(imgHeader), 1, dest);
+
+    // go to the start of the raw pixels
+    fseek(src, fileHeader.offset, SEEK_SET);
+    fseek(dest, fileHeader.offset, SEEK_SET);
+
+    return dest;
+}
+
+typedef size_t cipherFunc(
+    enum block_mode mode,
+    const byte input[],
+    byte **output,
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+);
+
+void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    FILE *src = fopen(filename, "rb");
+    handle_fopen_error(src, filename);
+
+    struct stat srcInfo;
+    fstat(fileno(src), &srcInfo);
+
+    FILE *dest = prepare_bitmap(src, destFilename);
+
+    size_t bytesRead, bytesProcessed;
+
+    byte *srcBuffer = malloc(srcInfo.st_size);
+
+    if (srcBuffer == NULL) {
+        printf("Couldn't allocate buffer of %lu bytes for unbuffered encryption/decryption. Maybe the buffered version?", srcInfo.st_size);
+        exit(ENOMEM);
+        return;
+    }
+
+    byte *dstBuffer;
+    bytesRead = fread(srcBuffer, 1, srcInfo.st_size, src);
+    bytesProcessed = f(mode, srcBuffer, &dstBuffer, bytesRead, key, keySize);
+
+    fwrite(dstBuffer, 1, bytesProcessed, dest);
+
+    fclose(src);
+    fclose(dest);
+
+    free(srcBuffer);
+    free(dstBuffer);
+}
+
+void __cipher_bitmap_core_buffered(cipherFunc f, const char *filename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    FILE *src = fopen(filename, "rb");
+    handle_fopen_error(src, filename);
+
+    FILE *dest = prepare_bitmap(src, destFilename);
+
+    size_t bytesRead, bytesProcessed;
+    static byte srcBuffer[BUFFER_SIZE];
+    byte *dstBuffer = NULL;
+
+    while ((bytesRead = fread(srcBuffer, 1, BUFFER_SIZE, src)) != 0) {
+        bytesProcessed = f(mode, srcBuffer, &dstBuffer, bytesRead, key, keySize);
+        fwrite(dstBuffer, 1, bytesProcessed, dest);
+    }
+
+    fclose(src);
+    fclose(dest);
+
+    // the file might just be empty, who knows? ¯\_(ツ)_/¯
+    if (dstBuffer != NULL)
+        free(dstBuffer);
+}
+
+void encrypt_bitmap(const char *srcFilename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    __cipher_bitmap_core(encrypt, srcFilename, destFilename, mode, key, keySize);
+}
+
+void encrypt_bitmap_buffered(const char *srcFilename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    __cipher_bitmap_core_buffered(encrypt, srcFilename, destFilename, mode, key, keySize);
+}
+
+void decrypt_bitmap(const char *srcFilename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    __cipher_bitmap_core(decrypt, srcFilename, destFilename, mode, key, keySize);
+}
+
+void decrypt_bitmap_buffered(const char *srcFilename, const char *destFilename, enum block_mode mode, const byte key[], short keySize) {
+    __cipher_bitmap_core_buffered(decrypt, srcFilename, destFilename, mode, key, keySize);
 }
