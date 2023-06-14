@@ -509,25 +509,16 @@ size_t encrypt(
     //       i'm too tired to figure out if/how this would also avoid malloc's for decryption,
     //       but it's definitely a positive change in any case
 
-    short extraBytes = dataSize % 16;
+    short extraBytes = (dataSize + 4) % 16;
 
-    // So... turns out we have to always add the size and pad anyway? ¯\_(ツ)_/¯
-    //
-    // if (extraBytes == 0) {
-    //     encrypt_aligned(mode, plaintext, ciphertext, dataSize, key, keySize);
-    //     return;
-    // }
+    short toPad = 0;
 
-    // if adding the size at the start is going to roll over into another block
-    // we need to allocate and pad even more
-    short toPad
-        = extraBytes + 4 > 16
-        ? (16 - extraBytes) + 16 // original + semi-padded + extra
-        : 16 - extraBytes;       // original + padded
+    if (extraBytes != 0) {
+        toPad = 16 - extraBytes;
+        log("Original data size of %d+4 wasn't a multiple of 16 bytes! Need to pad by %d\n", dataSize, toPad);
+    }
 
-    log("Data wasn't a multiple of 16 bytes! Need to pad by %d\n", toPad);
-
-    uint32_t padded_size = dataSize + toPad;
+    uint32_t padded_size = dataSize + 4 + toPad;
     byte *padded_plaintext = malloc(padded_size);
 
     if (padded_plaintext == NULL) {
@@ -543,7 +534,7 @@ size_t encrypt(
     memcpy(padded_plaintext + 4, plaintext, dataSize);
 
     // final 0s
-    bzero(padded_plaintext + 4 + dataSize, toPad - 4); // compensate the size at the start
+    bzero(padded_plaintext + 4 + dataSize, toPad); // compensate the size at the start
 
     *ciphertext = malloc(padded_size);
 
@@ -569,7 +560,7 @@ size_t decrypt(
     short keySize
 ) {
     byte *tmp_plaintext = malloc(dataSize);
-    log("Alloc'd plaintext @ %p\n", tmp_plaintext);
+    printf("Alloc'd %d bytes for plaintext @ %p\n", dataSize, tmp_plaintext);
 
     decrypt_aligned(mode, ciphertext, tmp_plaintext, dataSize, key, keySize);
 
