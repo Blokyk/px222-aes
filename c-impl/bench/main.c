@@ -218,10 +218,23 @@ void benchmark_ecb(int blocks, bool verbose) {
 }
 
 int main(int argc, char const *argv[]) {
-    srand(time(NULL));
-
     const int blocks = 1000000;
+//#define PROFILE
+#ifdef PROFILE
+    int dataSize = 16*blocks;
 
+    uint8_t *data = malloc(dataSize);
+    uint8_t *dest = malloc(dataSize);
+
+    uint8_t key[16] = {
+        0x00, 0x01, 0x02, 0x03,
+        0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b,
+        0x0c, 0x0d, 0x0e, 0x0f
+    };
+
+    encrypt_ecb(data, dest, dataSize, key, 16);
+#else
     bool verbose = false;
 
     if (argc == 2) {
@@ -230,4 +243,5 @@ int main(int argc, char const *argv[]) {
     }
 
     benchmark_ecb(blocks, verbose);
+#endif
 }

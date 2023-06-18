@@ -12,8 +12,6 @@
 #include "lookups.h"
 #include "utils.h"
 
-#define mk_word(b3, b2, b1, b0) ((uint32_t)(b3<<(8*3)) + (uint32_t)(b2<<(8*2)) + (uint32_t)(b1<<8) + (uint32_t)b0)
-
 void Cipher(byte data[4][4], const byte key[], int nr) {
     log("Initial state:\n");
     do_debug(print_block(data));
@@ -101,22 +99,19 @@ void ShiftRows(byte state[4][4]) {
         *((uint32_t*)state[i]) = ROR(asWord, 8*i);
     }
 }
+
 // we recognized a pattern alternating for mixcolumns : it's always multiply one term by 2, one by 3, and two by 1, then xor everything.
 // Needed to make an intermediate variable to help modify the columns, then copy it.
 void MixColumns(byte data[4][4]){
     static byte tmp[4][4];
+
     for (int i = 0 ; i<4 ; i++) {
         for (int x = 0 ; x<4 ; x++) {
             tmp[i][x] = mult2[data[i][x]] ^ mult3[data[(i+1)%4][x]] ^ data[(i+2)%4][x] ^ data[(i+3)%4][x] ;
         }
     }
 
-    // no need to memcpy, cause compiler will just rewrite it to of moves
-    for (int i = 0 ; i<4 ; i++) {
-        for (int x = 0 ; x<4 ; x++) {
-            data[i][x] = tmp[i][x];
-        }
-    }
+    memcpy(data, tmp, 16);
 }
 
 void InverseCipher(byte data[4][4], const byte key[], int nr) {
@@ -203,12 +198,7 @@ void InvMixColumns(byte data[4][4]) {
         }
     }
 
-    // memcpy? cf MixColumns
-    for (int i = 0 ; i < 4 ; i++){
-        for (int x = 0 ; x < 4; x++){
-            data[i][x] = tmp[i][x];
-        }
-    }
+    memcpy(data, tmp, 16);
 }
 // as SubBytes
 void SubWord(byte w[4]){
@@ -370,7 +360,8 @@ void encrypt_ecb(const byte plaintext[], byte ciphertext[], size_t dataSize, con
     int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
 
     for (size_t i = 0; i < dataSize/16; i++) {
-        log("Encrypting block #%02ld", i+1);
+        log("Encrypting block #%02ld\n", i+1);
+        do_debug(print_block(plaintext + i*16));
         linear_to_column_first_block(plaintext + i*16, tmp);
         Cipher(tmp, fullKey, nr);
         column_first_block_to_linear(tmp, ciphertext + i*16);
@@ -386,7 +377,7 @@ void decrypt_ecb(const byte ciphertext[], byte plaintext[], size_t dataSize, con
     int nr = expandKeyAndGetRoundNumber(key, fullKey, keySize);
 
     for (size_t i = 0; i < dataSize/16; i++) {
-        log("Decrypting block #%02ld", i+1);
+        log("Decrypting block #%02ld\n", i+1);
         linear_to_column_first_block(ciphertext + i*16, tmp);
         InverseCipher(tmp, fullKey, nr);
         column_first_block_to_linear(tmp, plaintext + i*16);
@@ -405,7 +396,8 @@ void encrypt_cbc(const byte plaintext[], byte ciphertext[], size_t dataSize, con
     const byte *lastBlock = emptyBlock;
 
     for (size_t i = 0; i < dataSize/16; i++) {
-        log("Encrypting block #%02ld", i+1);
+        log("Encrypting block #%02ld\n", i+1);
+        do_debug(print_block(plaintext + i*16));
 
         linear_to_column_first_block(plaintext + i*16, tmp);
 
@@ -432,7 +424,7 @@ void decrypt_cbc(const byte ciphertext[], byte plaintext[], size_t dataSize, con
     const byte *lastBlock = emptyBlock;
 
     for (size_t i = 0; i < dataSize/16; i++) {
-        log("Decrypting block #%02ld", i+1);
+        log("Decrypting block #%02ld\n", i+1);
 
         linear_to_column_first_block(ciphertext + i*16, tmp);
 
@@ -491,6 +483,67 @@ void decrypt_aligned(
     }
 }
 
+size_t encrypt_no_alloc(
+    enum block_mode mode,
+    const byte plaintext[],
+    byte *(ciphertext[]),
+    uint32_t dataSize,
+    const byte key[],
+    short keySize
+) {
+    if (__glibc_unlikely(dataSize < 12)) {
+        return;
+    }
+
+    log("Using encrypt_no_alloc!\n");
+
+    short extraBytes = (dataSize + 4) % 16;
+
+    short toPad = 0;
+
+    if (extraBytes != 0) {
+        toPad = 16 - extraBytes;
+        log("Original data size of %d+4 wasn't a multiple of 16 bytes! Need to pad by %d\n", dataSize, toPad);
+    }
+
+    uint32_t padded_size = dataSize + 4 + toPad;
+
+    *ciphertext = malloc(padded_size);
+    if (*ciphertext == NULL) {
+        printf("Couldn't allocate buffer of %u bytes for ciphertext buffer!\n", padded_size);
+        exit(ENOMEM);
+        return -1;
+    }
+
+
+    static byte tmpBlock[16];
+
+    // size
+    ((uint32_t*)tmpBlock)[0] = dataSize;
+    memcpy(tmpBlock + 4, plaintext, 12);
+
+    log("First block:\n");
+    do_debug(print_block(tmpBlock));
+    // encrypt first block with size 16
+    encrypt_aligned(mode, tmpBlock, *ciphertext, 16, key, keySize);
+
+
+    uint32_t bytesLeft = dataSize - 12 - extraBytes; // ignore bytes already encrypted, and don't process the final bytes that don't fit in a block
+    log("%d bytes left to encrypt normally\n", bytesLeft);
+
+    log("Encrypting rest...\n");
+    // encrypt rest of data except last (padded) block
+    encrypt_aligned(mode, plaintext + 12, *ciphertext + 16, bytesLeft, key, keySize);
+
+    memcpy(tmpBlock, plaintext + dataSize - extraBytes, extraBytes);
+    bzero(tmpBlock + extraBytes, toPad);
+    log("Last block:\n");
+    do_debug(print_block(tmpBlock));
+    encrypt_aligned(mode, tmpBlock, *ciphertext + 16 + bytesLeft, 16, key, keySize);
+
+    return padded_size;
+}
+
 size_t encrypt(
     enum block_mode mode,
     const byte plaintext[],
@@ -499,15 +552,23 @@ size_t encrypt(
     const byte key[],
     short keySize
 ) {
-    // todo: we don't actually *have* to malloc anything here, i just ran out of time+energy
-    //       what we could actually do is only copy the first 12 (=16-4) bytes of data and
-    //       prepend the size to that, encrypt it as the first block, and then have another
-    //       wrapper/function that takes care of padding for us, this way we avoid any dynamic
-    //       allocation in the cipher (which would "escape" to the client and become their
-    //       responsibility despite not having requested any dynamic stuff AND having potentially
-    //       passed a buffer themselves -- bad API design if you ask me!)
-    //       i'm too tired to figure out if/how this would also avoid malloc's for decryption,
-    //       but it's definitely a positive change in any case
+    // unfortunately, the way we cut up our data in encrypt_no_alloc is
+    // incompatible with CBC: since we make multiple calls to encrypt_aligned,
+    // there's no way to "transfer" blocks between each call for XORing
+    //
+    // another thing we could do, is special case CBC, so that it manually XORs
+    // the first block with the rest, and then last full block with the ending
+    // padded block, that would make for some ugly spaghetti code (and even then,
+    // _this_ fix is already hacky enough for me, the separation-of-concern god is
+    // probably looking disapprovingly at this mess right now)
+    //
+    // An alternative would be to change would be to make the IV a for CBC, and
+    // then use/pass the necessary blocks when making multiple calls. However,
+    // the biggest downside to this method is that it would require adding an
+    // IV parameter to encrypt_aligned, but it would only be used for CBC and
+    // not ECB, which might make the API a bit unwieldy.
+    if (mode == ECB_MODE)
+        return encrypt_no_alloc(mode, plaintext, ciphertext, dataSize, key, keySize);
 
     short extraBytes = (dataSize + 4) % 16;
 
@@ -559,20 +620,28 @@ size_t decrypt(
     const byte key[],
     short keySize
 ) {
+    // todo: do the same as encrypt_no_alloc when decrypting ECB
+
     byte *tmp_plaintext = malloc(dataSize);
-    printf("Alloc'd %d bytes for plaintext @ %p\n", dataSize, tmp_plaintext);
+    log("Alloc'd %d bytes for plaintext @ %p\n", dataSize, tmp_plaintext);
 
     decrypt_aligned(mode, ciphertext, tmp_plaintext, dataSize, key, keySize);
 
     uint32_t size = ((uint32_t*)tmp_plaintext)[0];
 
-    printf("Decrypted to a size of %u (0x%X) bytes\n", size, size);
+    log("Decrypted to a size of %u (0x%X) bytes\n", size, size);
 
-    assert(size < dataSize);
+    if (dataSize <= size) {
+        printf("The provided buffer is missing some bytes necessary to decrypt the original data correctly\n");
+        exit(1);
+        return;
+    }
 
+    // no, we can't just return an offset'd pointer, cause the user wouldn't be able
+    // to free it afterwards... sucks :/
     byte *old_plaintext = tmp_plaintext;
     tmp_plaintext = malloc(size);
-    memcpy(tmp_plaintext, old_plaintext+sizeof(uint32_t), size);
+    memcpy(tmp_plaintext, old_plaintext + 4, size);
     free(old_plaintext);
 
     *plaintext = tmp_plaintext;

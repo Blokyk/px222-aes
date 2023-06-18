@@ -1,9 +1,13 @@
 CC ?= gcc
-WARN += all extra
+SANITIZERS = address leak undefined leak shift shift-exponent shift-base integer-divide-by-zero unreachable vla-bound null return signed-integer-overflow bounds bounds-strict bool enum
+_ASAN = $(addprefix -fsanitize=, $(SANITIZERS))
+WARN += all extra switch-enum vla
 NO_WARN += unused-value format-extra-args
 CFLAGS += $(addprefix -W, $(WARN)) $(addprefix -Wno-, $(NO_WARN))
-CFLAGS += -march=native -g -flto -fshort-enums -fsanitize=address,leak
-LDFLAGS += -flto -fsanitize=address,leak
+CFLAGS += -march=native -g -flto -fshort-enums
+CFLAGS += $(_ASAN)
+LDFLAGS += -lasan -lubsan -flto
+LDFLAGS += $(_ASAN)
 
 OBJ_DIR = obj
 
@@ -67,8 +71,8 @@ help:
 	@echo '                of encryption/decryption'
 
 # this doesn't build the benchmarks because those require cleaning & recompiling everything
-# and since in theory there's no guarantee dependencies will be fulfilled, there's no way to
-# ensure it's ran first or sequentially with the others
+# and since in theory there's no guarantee dependencies will be fulfilled in order, there's
+# no way to ensure it's ran first or sequentially with the others
 build-all: build-lib build-app build-test | $(BIN_DIR) $(OBJ_DIR)
 
 build-lib: $(OBJS) | $(BIN_DIR) $(OBJ_DIR)
@@ -79,8 +83,8 @@ build-app: $(APP_OBJS) | build-lib
 
 build-bench: clean | build-bench_
 
-build-bench_: LDFLAGS = -Ofast -march=native -flto
-build-bench_: CFLAGS = $(WARNS) $(NO_WARNS) -Ofast -march=native -flto -fshort-enums
+build-bench_: LDFLAGS = -Ofast -flto -march=native
+build-bench_: CFLAGS = $(WARNS) $(NO_WARNS) -Ofast -flto -march=native
 build-bench_: $(BENCH_OBJS) | $(BIN_DIR)
 	$(CC) -o $(BENCH_EXEC) $^ $(LDFLAGS)
 
@@ -138,3 +142,5 @@ $(OBJ_DIR):
 	mkdir $(OBJ_DIR)/app
 	mkdir $(OBJ_DIR)/bench
 	mkdir $(OBJ_DIR)/tests
+
+.PHONY: help

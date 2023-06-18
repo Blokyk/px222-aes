@@ -60,9 +60,16 @@ void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFi
 
     struct stat srcInfo;
     fstat(fileno(src), &srcInfo);
+    size_t srcSize = srcSize;
 
-    if (srcInfo.st_size >= MAX_UNBUFFERED_SIZE) { // -20 for size + padding
-        printf("'%s' is too big (%ld) to be processed, must be %d bytes at most. Use --buffered instead", filename, srcInfo.st_size, MAX_UNBUFFERED_SIZE);
+    if (srcSize == 0) {
+        printf("Can't encrypt an empty file!\n");
+        exit(1);
+        return;
+    }
+
+    if (srcSize >= MAX_UNBUFFERED_SIZE) { // -20 for size + padding
+        printf("'%s' is too big (%ld) to be processed, must be %d bytes at most. Use --buffered instead", filename, srcSize, MAX_UNBUFFERED_SIZE);
         exit(1);
         return;
     }
@@ -71,16 +78,16 @@ void __cipher_bitmap_core(cipherFunc f, const char *filename, const char *destFi
 
     size_t bytesRead, bytesProcessed;
 
-    byte *srcBuffer = malloc(srcInfo.st_size);
+    byte *srcBuffer = malloc(srcSize);
 
     if (srcBuffer == NULL) {
-        printf("Couldn't allocate buffer of %lu bytes for unbuffered encryption/decryption. Maybe the buffered version?", srcInfo.st_size);
+        printf("Couldn't allocate buffer of %lu bytes for unbuffered encryption/decryption. Maybe the buffered version?", srcSize);
         exit(ENOMEM);
         return;
     }
 
     byte *dstBuffer;
-    bytesRead = fread(srcBuffer, 1, srcInfo.st_size, src);
+    bytesRead = fread(srcBuffer, 1, srcSize, src);
     bytesProcessed = f(mode, srcBuffer, &dstBuffer, bytesRead, key, keySize);
 
     fwrite(dstBuffer, 1, bytesProcessed, dest);
